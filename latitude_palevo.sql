@@ -56,7 +56,6 @@ CREATE TABLE IF NOT EXISTS `raw_json_dumps` (
   `id` int(32) NOT NULL AUTO_INCREMENT,
   `timestamp` datetime NOT NULL,
   `data` longtext NOT NULL,
-  `processed` int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
 
