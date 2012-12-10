@@ -11,7 +11,7 @@ import getpass, re, json, time, sys
 #  * easy_install-3.2 pymysql3
 import pymysql
 
-DB_HOST   = '178.162.101.7'
+DB_HOST   = 'localhost'
 DB_USER   = 'latitude_palevo'
 DB_PASSWD = 'uQVyav38Wz9nmysz'
 DB_NAME   = 'latitude_palevo'
@@ -161,7 +161,7 @@ if __name__ == "__main__":
                 if doc != oldDoc:
                     try:
                         logger.addToLog("Saving raw json dump to DB:", end = " ")
-                        cur.execute('INSERT INTO raw_json_dumps (timestamp, data) VALUES (NOW(), "%s")' % conn.escape(docEnc))
+                        cur.execute('INSERT INTO raw_json_dumps (timestamp, data) VALUES (NOW(), %s)' % conn.escape(docEnc))
                         logger.addToLogWithNoTimestamp("DONE")
                     except:
                         logger.addToLogWithNoTimestamp("FAIL: " + str(sys.exc_info()[1]))
@@ -175,16 +175,16 @@ if __name__ == "__main__":
 
                             if not info[2] in emailToUserId:
                                 maxUserId += 1
-                                cur.execute('INSERT INTO email_to_user_id (email, user_id) VALUES ("%s", %d)' % (conn.escape(info[2]), maxUserId))
+                                cur.execute('INSERT INTO email_to_user_id (email, user_id) VALUES (%s, %d)' % (conn.escape(info[2]), maxUserId))
                                 emailToUserId[info[2]] = maxUserId
-                                cur.execute('INSERT INTO users (user_id, last_update_time, email, fullname, firstname, lastname, googleplus) VALUES (%d, "", "%s", "%s", "%s", "%s", "%s")' % (maxUserId, conn.escape(info[2]), conn.escape(info[3].encode('utf-8')), conn.escape(info[19].encode('utf-8')), conn.escape(info[20].encode('utf-8')), conn.escape(info[30])))
+                                cur.execute('INSERT INTO users (user_id, last_update_time, email, fullname, firstname, lastname, googleplus) VALUES (%d, "", %s, %s, %s, %s, %s)' % (maxUserId, conn.escape(info[2]), conn.escape(info[3].encode('utf-8')), conn.escape(info[19].encode('utf-8')), conn.escape(info[20].encode('utf-8')), conn.escape(info[30])))
                                 lastUpdateTime[maxUserId] = ""
 
                             userId = emailToUserId[info[2]]
                             if info[7] != lastUpdateTime[userId]:
-                                cur.execute('UPDATE users SET last_update_time = "%s" WHERE user_id = %d' % (conn.escape(info[7]), userId))
+                                cur.execute('UPDATE users SET last_update_time = %s WHERE user_id = %d' % (conn.escape(info[7]), userId))
                                 lastUpdateTime[userId] = info[7]
-                                cur.execute('INSERT INTO pos_history (user_id, coord1, coord2, timestamp) VALUES (%d, %d, %d, "%s")' % (userId, info[5], info[6], conn.escape(info[7])))
+                                cur.execute('INSERT INTO pos_history (user_id, coord1, coord2, timestamp) VALUES (%d, %d, %d, %s)' % (userId, info[5], info[6], conn.escape(info[7])))
 
                         logger.addToLogWithNoTimestamp("DONE")
                     except:
