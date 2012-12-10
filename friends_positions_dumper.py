@@ -164,28 +164,31 @@ if __name__ == "__main__":
                         cur.execute('INSERT INTO raw_json_dumps (timestamp, data) VALUES (NOW(), "%s")' % conn.escape(docEnc))
                         logger.addToLogWithNoTimestamp("DONE")
                     except:
-                        logger.addToLogWithNoTimestamp("FAIL: " + sys.exc_info()[1])
+                        logger.addToLogWithNoTimestamp("FAIL: " + str(sys.exc_info()[1]))
 
                     try:
                         logger.addToLog("Processing json dump and saving processed data to DB:", end = " ")
 
                         for info in friendsInfo[1][1]:
+                            if info[5] == None or info[6] == None:
+                                continue
+
                             if not info[2] in emailToUserId:
                                 maxUserId += 1
-                                cur.execute('INSERT INTO email_to_user_id (email, user_id) VALUES ("%s", %d)' % conn.escape(info[2]), maxUserId)
+                                cur.execute('INSERT INTO email_to_user_id (email, user_id) VALUES ("%s", %d)' % (conn.escape(info[2]), maxUserId))
                                 emailToUserId[info[2]] = maxUserId
-                                cur.execute('INSERT INTO users (user_id, last_update_time, email, fullname, firstname, lastname, googleplus) VALUES (%d, "", "%s", "%s", "%s", "%s")' % (maxUserId, info[2], info[3], info[19], info[20], info[30]))
+                                cur.execute('INSERT INTO users (user_id, last_update_time, email, fullname, firstname, lastname, googleplus) VALUES (%d, "", "%s", "%s", "%s", "%s", "%s")' % (maxUserId, conn.escape(info[2]), conn.escape(info[3].encode('utf-8')), conn.escape(info[19].encode('utf-8')), conn.escape(info[20].encode('utf-8')), conn.escape(info[30])))
                                 lastUpdateTime[maxUserId] = ""
 
                             userId = emailToUserId[info[2]]
                             if info[7] != lastUpdateTime[userId]:
-                                cur.execute('UPDATE users SET last_update_time = "%s" WHERE user_id = %d' % conn.escape(info[7]), userId)
+                                cur.execute('UPDATE users SET last_update_time = "%s" WHERE user_id = %d' % (conn.escape(info[7]), userId))
                                 lastUpdateTime[userId] = info[7]
-                                cur.execute('INSERT INTO pos_history (user_id, coord1, coord2, timestamp) VALUES (%d, %d, %d, "%s")' % (userId, info[5], info[6], info[7]))
+                                cur.execute('INSERT INTO pos_history (user_id, coord1, coord2, timestamp) VALUES (%d, %d, %d, "%s")' % (userId, info[5], info[6], conn.escape(info[7])))
 
                         logger.addToLogWithNoTimestamp("DONE")
                     except:
-                        logger.addToLogWithNoTimestamp("FAIL: " + sys.exc_info()[1])
+                        logger.addToLogWithNoTimestamp("FAIL: " + str(sys.exc_info()[1]))
 
                 else:
                     logger.addToLog("No difference from last json dump")
