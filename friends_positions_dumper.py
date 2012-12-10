@@ -3,7 +3,20 @@
 import http.cookiejar
 import urllib.request, urllib.error, urllib.parse
 from html.parser import HTMLParser
-import getpass, re, json, time
+import getpass, re, json, time, sys
+
+# On Ubuntu 12.04:
+#  * sudo -i
+#  * curl http://python-distribute.org/distribute_setup.py | python3
+#  * easy_install-3.2 pymysql3
+import pymysql
+
+DB_HOST   = '178.162.101.7'
+DB_USER   = 'latitude_palevo'
+DB_PASSWD = 'uQVyav38Wz9nmysz'
+DB_NAME   = 'latitude_palevo'
+
+SLEEP_INTERVAL = 120
 
 # Took this class from 'habr143972_vk_auth_2to3processed.py' and improved a bit
 class FormParser(HTMLParser):
@@ -58,6 +71,9 @@ class Logger():
         self.logFile.flush()
 
 if __name__ == "__main__":
+    conn = pymysql.connect(host = DB_HOST, user = DB_USER, passwd = DB_PASSWD, db = DB_NAME)
+    cur = conn.cursor()
+
     email = ""
     password = ""
 
@@ -103,22 +119,19 @@ if __name__ == "__main__":
             raise RuntimeError("Can\'t get XsrfToken!")
         XsrfToken = XsrfTokenMatch.group(1)
         logger.addToLogWithNoTimestamp("DONE")
-        
-        jsonGettingOK = True
 
-        while jsonGettingOK:
+        jsonGetOK = True
+
+        while jsonGetOK:
             logger.addToLog("Getting friends info and coordinates json dump:", end = " ")
             response = opener.open(urllib.request.Request("https://latitude.google.com/latitude/b/0/apps/pvjson?t=4", "[null,null,null,null,null,true,null,[null,null,null,null,null,null,null,2]]".encode('utf-8'), {"X-ManualHeader": XsrfToken}))
-            doc = response.read().decode('utf-8')
+            docEnc = response.read()
+            doc = docEnc.decode('utf-8')
             try:
                 friendsInfo = json.loads(doc)
                 logger.addToLogWithNoTimestamp("DONE")
-                
-                # save coordinates and etc
-                
-                time.sleep(10)
             except ValueError:
-                jsonGettingOK = False
+                jsonGetOK = False
                 parser = FormParser()
                 parser.feed(doc)
                 parser.close()
@@ -126,3 +139,22 @@ if __name__ == "__main__":
                     logger.addToLogWithNoTimestamp("FAIL [unrecognized answer]")
                 else:
                     logger.addToLogWithNoTimestamp("FAIL [relogin page is the answer]")
+
+            if jsonGetOK:
+                try:
+                    logger.addToLog("Saving raw json dump to DB:", end = " ")
+                    cur.execute('INSERT INTO raw_json_dumps (timestamp, data) VALUES (NOW(), "%s")' % conn.escape(docEnc))
+                    logger.addToLogWithNoTimestamp("DONE")
+                except:
+                    logger.addToLogWithNoTimestamp("FAIL: " + sys.exc_info()[1])
+
+                try:
+                    logger.addToLog("Processing json dump and saving processed data to DB:", end = " ")
+
+                    # ...
+
+                    logger.addToLogWithNoTimestamp("DONE")
+                except:
+                    logger.addToLogWithNoTimestamp("FAIL: " + sys.exc_info()[1])
+
+                time.sleep(SLEEP_INTERVAL)
