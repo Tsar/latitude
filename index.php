@@ -2,6 +2,7 @@
 <html>
   <head>
     <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
     <style type="text/css">
       html { height: 100% }
       body { height: 100%; margin: 0; padding: 0 }
@@ -24,12 +25,18 @@
     while ($row = $result->fetch_assoc()) {
         $userId = $row['user_id'];
         $lat = $row['coord1'] / 1E6;
-        $long = $row['coord2'] / 1E6;
+        $lon = $row['coord2'] / 1E6;
         if (array_key_exists($userId, $paths)) {
-            $paths[$userId] .= ", $lat, $long";
+            $paths[$userId] .= ", $lat, $lon";
         } else {
-            $paths[$userId] = "$lat, $long";
+            $paths[$userId] = "$lat, $lon";
         }
+    }
+
+    $result = $m->query('SELECT user_id, fullname FROM users');
+    $fullnames = array();
+    while ($row = $result->fetch_assoc()) {
+        $fullnames[$row['user_id']] = $row['fullname'];
     }
 
 ?>
@@ -62,6 +69,11 @@
         echo "            strokeWeight: 2,\n";
         echo "            strokeOpacity: 0.8,\n";
         echo "            path: path$userId\n";
+        echo "        });\n";
+        echo "        var marker$userId = new google.maps.Marker({\n";
+        echo "            map: map,\n";
+        echo "            title: '" . $fullnames[$userId] . "',\n";
+        echo "            position: path$userId" . "[path$userId.length - 1]\n";
         echo "        });\n";
     }
 
