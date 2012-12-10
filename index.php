@@ -62,10 +62,13 @@
             mapOptions);
 <?php
 
+    $colors = array("#FF0000", "#009900", "#0000FF", "#FF00FF", "#000000");
+    $colorsNum = count($colors);
+
     foreach ($paths as $userId => $path) {
         echo "        var polyline$userId = new google.maps.Polyline({\n";
         echo "            map: map,\n";
-        echo "            strokeColor: '#FF0000',\n";
+        echo "            strokeColor: '" . $colors[($userId - 1) % $colorsNum] . "',\n";
         echo "            strokeWeight: 2,\n";
         echo "            strokeOpacity: 0.8,\n";
         echo "            path: path$userId\n";
