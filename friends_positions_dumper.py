@@ -58,7 +58,7 @@ class FormParser(HTMLParser):
 class Logger():
     def __init__(self, fileName):
         self.logFile = open(fileName, "a")
-        
+
     def addToLog(self, info, end = "\n"):
         t = time.strftime("%d.%m.%Y %H:%M:%S: ")
         print(t + info, end = end)
@@ -73,6 +73,21 @@ class Logger():
 if __name__ == "__main__":
     conn = pymysql.connect(host = DB_HOST, user = DB_USER, passwd = DB_PASSWD, db = DB_NAME)
     cur = conn.cursor()
+
+    emailToUserId = {}
+    maxUserId = 0
+    cur.execute('SELECT email, user_id FROM email_to_user_id')
+    for row in cur:
+        email, user_id = row
+        emailToUserId[email] = user_id
+        if maxUserId < int(user_id):
+            maxUserId = int(user_id)
+
+    lastUpdateTime = {}
+    cur.execute('SELECT user_id, last_update_time FROM users')
+    for row in cur:
+        user_id, last_update_time = row
+        lastUpdateTime[user_id] = last_update_time
 
     email = ""
     password = ""
@@ -121,11 +136,13 @@ if __name__ == "__main__":
         logger.addToLogWithNoTimestamp("DONE")
 
         jsonGetOK = True
+        oldDoc = ""
 
         while jsonGetOK:
             logger.addToLog("Getting friends info and coordinates json dump:", end = " ")
             response = opener.open(urllib.request.Request("https://latitude.google.com/latitude/b/0/apps/pvjson?t=4", "[null,null,null,null,null,true,null,[null,null,null,null,null,null,null,2]]".encode('utf-8'), {"X-ManualHeader": XsrfToken}))
             docEnc = response.read()
+            oldDoc = doc
             doc = docEnc.decode('utf-8')
             try:
                 friendsInfo = json.loads(doc)
@@ -141,20 +158,36 @@ if __name__ == "__main__":
                     logger.addToLogWithNoTimestamp("FAIL [relogin page is the answer]")
 
             if jsonGetOK:
-                try:
-                    logger.addToLog("Saving raw json dump to DB:", end = " ")
-                    cur.execute('INSERT INTO raw_json_dumps (timestamp, data) VALUES (NOW(), "%s")' % conn.escape(docEnc))
-                    logger.addToLogWithNoTimestamp("DONE")
-                except:
-                    logger.addToLogWithNoTimestamp("FAIL: " + sys.exc_info()[1])
+                if doc != oldDoc:
+                    try:
+                        logger.addToLog("Saving raw json dump to DB:", end = " ")
+                        cur.execute('INSERT INTO raw_json_dumps (timestamp, data) VALUES (NOW(), "%s")' % conn.escape(docEnc))
+                        logger.addToLogWithNoTimestamp("DONE")
+                    except:
+                        logger.addToLogWithNoTimestamp("FAIL: " + sys.exc_info()[1])
 
-                try:
-                    logger.addToLog("Processing json dump and saving processed data to DB:", end = " ")
+                    try:
+                        logger.addToLog("Processing json dump and saving processed data to DB:", end = " ")
 
-                    # ...
+                        for info in friendsInfo[1][1]:
+                            if not info[2] in emailToUserId:
+                                maxUserId += 1
+                                cur.execute('INSERT INTO email_to_user_id (email, user_id) VALUES ("%s", %d)' % conn.escape(info[2]), maxUserId)
+                                emailToUserId[info[2]] = maxUserId
+                                cur.execute('INSERT INTO users (user_id, last_update_time, email, fullname, firstname, lastname, googleplus) VALUES (%d, "", "%s", "%s", "%s", "%s")' % (maxUserId, info[2], info[3], info[19], info[20], info[30]))
+                                lastUpdateTime[maxUserId] = ""
 
-                    logger.addToLogWithNoTimestamp("DONE")
-                except:
-                    logger.addToLogWithNoTimestamp("FAIL: " + sys.exc_info()[1])
+                            userId = emailToUserId[info[2]]
+                            if info[7] != lastUpdateTime[userId]:
+                                cur.execute('UPDATE users SET last_update_time = "%s" WHERE user_id = %d' % conn.escape(info[7]), userId)
+                                lastUpdateTime[userId] = info[7]
+                                cur.execute('INSERT INTO pos_history (user_id, coord1, coord2, timestamp) VALUES (%d, %d, %d, "%s")' % (userId, info[5], info[6], info[7]))
+
+                        logger.addToLogWithNoTimestamp("DONE")
+                    except:
+                        logger.addToLogWithNoTimestamp("FAIL: " + sys.exc_info()[1])
+
+                else:
+                    logger.addToLog("No difference from last json dump")
 
                 time.sleep(SLEEP_INTERVAL)
