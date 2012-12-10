@@ -71,7 +71,7 @@ class Logger():
         self.logFile.flush()
 
 if __name__ == "__main__":
-    conn = pymysql.connect(host = DB_HOST, user = DB_USER, passwd = DB_PASSWD, db = DB_NAME)
+    conn = pymysql.connect(host = DB_HOST, user = DB_USER, passwd = DB_PASSWD, db = DB_NAME, charset = 'utf8')
     cur = conn.cursor()
 
     emailToUserId = {}
@@ -177,7 +177,7 @@ if __name__ == "__main__":
                                 maxUserId += 1
                                 cur.execute('INSERT INTO email_to_user_id (email, user_id) VALUES (%s, %d)' % (conn.escape(info[2]), maxUserId))
                                 emailToUserId[info[2]] = maxUserId
-                                cur.execute('INSERT INTO users (user_id, last_update_time, email, fullname, firstname, lastname, googleplus) VALUES (%d, "", %s, %s, %s, %s, %s)' % (maxUserId, conn.escape(info[2]), conn.escape(info[3].encode('utf-8')), conn.escape(info[19].encode('utf-8')), conn.escape(info[20].encode('utf-8')), conn.escape(info[30])))
+                                cur.execute('INSERT INTO users (user_id, last_update_time, email, fullname, firstname, lastname, googleplus) VALUES (%d, "", %s, %s, %s, %s, %s)' % (maxUserId, conn.escape(info[2]), conn.escape(info[3]), conn.escape(info[19]), conn.escape(info[20]), conn.escape(info[30])))
                                 lastUpdateTime[maxUserId] = ""
 
                             userId = emailToUserId[info[2]]
