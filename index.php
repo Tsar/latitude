@@ -23,10 +23,12 @@
     $paths = array();
     while ($row = $result->fetch_assoc()) {
         $userId = $row['user_id'];
+        $lat = $row['coord1'] / 1E6;
+        $long = $row['coord2'] / 1E6;
         if (array_key_exists($userId, $paths)) {
-            $paths[$userId] .= ', ' . $row['coord1'] . ', ' . $row['coord2'];
+            $paths[$userId] .= ", $lat, $long";
         } else {
-            $paths[$userId] = $row['coord1'] . ', ' . $row['coord2'];
+            $paths[$userId] = "$lat, $long";
         }
     }
 
