@@ -144,18 +144,22 @@ if __name__ == "__main__":
             docEnc = response.read()
             oldDoc = doc
             doc = docEnc.decode('utf-8')
-            try:
-                friendsInfo = json.loads(doc)
-                logger.addToLogWithNoTimestamp("DONE")
-            except ValueError:
+            if doc == "[3,[]]":
                 jsonGetOK = False
-                parser = FormParser()
-                parser.feed(doc)
-                parser.close()
-                if not parser.form_parsed or parser.url is None or "Email" not in parser.params or "Passwd" not in parser.params:
-                    logger.addToLogWithNoTimestamp("FAIL [unrecognized answer]")
-                else:
-                    logger.addToLogWithNoTimestamp("FAIL [relogin page is the answer]")
+                logger.addToLogWithNoTimestamp("Got [3,[]], need relogin")
+            else:
+                try:
+                    friendsInfo = json.loads(doc)
+                    logger.addToLogWithNoTimestamp("DONE")
+                except ValueError:
+                    jsonGetOK = False
+                    parser = FormParser()
+                    parser.feed(doc)
+                    parser.close()
+                    if not parser.form_parsed or parser.url is None or "Email" not in parser.params or "Passwd" not in parser.params:
+                        logger.addToLogWithNoTimestamp("FAIL [unrecognized answer]")
+                    else:
+                        logger.addToLogWithNoTimestamp("FAIL [relogin page is the answer]")
 
             if jsonGetOK:
                 if doc != oldDoc:
