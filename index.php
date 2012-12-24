@@ -33,14 +33,16 @@
         }
     }
 
-    $result = $m->query('SELECT user_id, fullname, last_update_time, profile_image FROM users');
+    $result = $m->query('SELECT user_id, fullname, last_update_time, profile_image, googleplus FROM users');
     $fullnames = array();
     $lastUpdateTime = array();
     $profileImages = array();
+    $googleplus = array();
     while ($row = $result->fetch_assoc()) {
         $fullnames[$row['user_id']] = $row['fullname'];
         $lastUpdateTime[$row['user_id']] = $row['last_update_time'];
         $profileImages[$row['user_id']] = $row['profile_image'];
+        $googleplus[$row['user_id']] = $row['googleplus'];
     }
 
 ?>
@@ -52,15 +54,15 @@
         echo "        var pathCoords$userId = [$path];\n";
         echo "        var path$userId = [];\n";
         echo "        for (var i = 0, i_end = pathCoords$userId.length / 2; i < i_end; ++i) {\n";
-        echo "          path$userId.push(new google.maps.LatLng(parseFloat(pathCoords$userId" . "[i * 2]), parseFloat(pathCoords$userId" . "[i * 2 + 1])));\n";
+        echo "            path$userId.push(new google.maps.LatLng(parseFloat(pathCoords$userId" . "[i * 2]), parseFloat(pathCoords$userId" . "[i * 2 + 1])));\n";
         echo "        }\n";
     }
 
 ?>
         var mapOptions = {
-          center: new google.maps.LatLng(59.940568, 30.121078),
-          zoom: 11,
-          mapTypeId: google.maps.MapTypeId.ROADMAP
+            center: new google.maps.LatLng(59.940568, 30.121078),
+            zoom: 11,
+            mapTypeId: google.maps.MapTypeId.ROADMAP
         };
         var map = new google.maps.Map(document.getElementById("map_canvas"),
             mapOptions);
@@ -69,6 +71,8 @@
                                                             new google.maps.Size(64, 78),
                                                             new google.maps.Point(0, 0),
                                                             new google.maps.Point(32, 72));
+        var infoWindow = new google.maps.InfoWindow({content: 'empty'});
+        var infoWindowFixed = false;
 <?php
 
     $colors = array("#FF0000", "#009900", "#0000FF", "#FF00FF", "#000000");
@@ -83,6 +87,7 @@
         echo "            path: path$userId,\n";
         echo "            geodesic: true\n";
         echo "        });\n";
+
         if (!is_null($profileImages[$userId])) {
             echo "        var markerImage$userId = new google.maps.MarkerImage(\n";
             echo "            '" . $profileImages[$userId] . "',\n";
@@ -103,6 +108,34 @@
             echo "            icon: markerImageShadow\n";
         }
         echo "        });\n";
+
+        if (!is_null($profileImages[$userId])) {
+            $infoWindowContent = '><tr><td><b><a href="' . $googleplus[$userId] . '" target=_blank>' . $fullnames[$userId] . '</a></b></td>' .
+                                      '<td rowspan="2"><a href="' . $googleplus[$userId] . '" target=_blank><img src="' . $profileImages[$userId] . '" alt="' . $fullnames[$userId] . '" /></a></td></tr>' .
+                                  '<tr><td><i>Последнее обновление:</i><br/>' . date('d.m.Y H:i:s', $lastUpdateTime[$userId] / 1000) . '</td></tr></table>';
+        } else {
+            $infoWindowContent = '><tr><td><b><a href="' . $googleplus[$userId] . '" target=_blank>' . $fullnames[$userId] . '</a></b></td></tr>' .
+                                  '<tr><td><i>Последнее обновление:</i><br/>' . date('d.m.Y H:i:s', $lastUpdateTime[$userId] / 1000) . '</td></tr></table>';
+        }
+
+        echo "    google.maps.event.addListener(marker$userId, 'mouseover', function(event) {\n";
+        echo "        if (!infoWindowFixed) {\n";
+        echo "            infoWindow.setContent('<table$infoWindowContent');";
+        echo "            infoWindow.open(map, this);\n";
+        echo "        }\n";
+        echo "    });\n";
+        echo "    google.maps.event.addListener(marker$userId, 'mouseout', function(event) {\n";
+        echo "        if (!infoWindowFixed)\n";
+        echo "            infoWindow.close();\n";
+        echo "    });\n";
+        echo "    google.maps.event.addListener(marker$userId, 'click', function(event) {\n";
+        echo "        infoWindowFixed = !infoWindowFixed;\n";
+        echo "        if (infoWindowFixed) {\n";
+        echo "            infoWindow.setContent('<table bgcolor=\"#EEFFEE\"$infoWindowContent');\n";
+        echo "        } else {\n";
+        echo "            infoWindow.setContent('<table$infoWindowContent');\n";
+        echo "        }\n";
+        echo "    });\n";
     }
 
 ?>
