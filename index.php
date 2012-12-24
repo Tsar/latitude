@@ -20,7 +20,7 @@
 
     $m = new mysqli($db_server, $db_user, $db_passwd, $db_name);
 
-    $result = $m->query('SELECT user_id, coord1, coord2 FROM pos_history ORDER BY id');
+    $result = $m->query('SELECT user_id, coord1, coord2 FROM pos_history WHERE valid = 1 ORDER BY id');
     $paths = array();
     while ($row = $result->fetch_assoc()) {
         $userId = $row['user_id'];

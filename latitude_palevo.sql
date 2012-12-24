@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 3.5.4
+-- version 3.5.1
 -- http://www.phpmyadmin.net
 --
 -- Host: localhost
--- Generation Time: Dec 24, 2012 at 06:13 PM
--- Server version: 5.5.28-0ubuntu0.12.04.3
--- PHP Version: 5.3.10-1ubuntu3.4
+-- Generation Time: Dec 24, 2012 at 08:17 PM
+-- Server version: 5.1.61-log
+-- PHP Version: 5.3.10-pl0-gentoo
 
 SET SQL_MODE="NO_AUTO_VALUE_ON_ZERO";
 SET time_zone = "+00:00";
@@ -43,6 +43,7 @@ CREATE TABLE IF NOT EXISTS `pos_history` (
   `coord1` int(32) NOT NULL,
   `coord2` int(32) NOT NULL,
   `timestamp` bigint(64) NOT NULL,
+  `valid` int(11) NOT NULL DEFAULT '1',
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
 
