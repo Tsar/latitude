@@ -33,10 +33,14 @@
         }
     }
 
-    $result = $m->query('SELECT user_id, fullname FROM users');
+    $result = $m->query('SELECT user_id, fullname, last_update_time, profile_image FROM users');
     $fullnames = array();
+    $lastUpdateTime = array();
+    $profileImages = array();
     while ($row = $result->fetch_assoc()) {
         $fullnames[$row['user_id']] = $row['fullname'];
+        $lastUpdateTime[$row['user_id']] = $row['last_update_time'];
+        $profileImages[$row['user_id']] = $row['profile_image'];
     }
 
 ?>
@@ -60,6 +64,11 @@
         };
         var map = new google.maps.Map(document.getElementById("map_canvas"),
             mapOptions);
+
+        var markerImageShadow = new google.maps.MarkerImage('my_friend_placard.png',
+                                                            new google.maps.Size(64, 78),
+                                                            new google.maps.Point(0, 0),
+                                                            new google.maps.Point(32, 72));
 <?php
 
     $colors = array("#FF0000", "#009900", "#0000FF", "#FF00FF", "#000000");
@@ -74,10 +83,25 @@
         echo "            path: path$userId,\n";
         echo "            geodesic: true\n";
         echo "        });\n";
+        if (!is_null($profileImages[$userId])) {
+            echo "        var markerImage$userId = new google.maps.MarkerImage(\n";
+            echo "            '" . $profileImages[$userId] . "',\n";
+            echo "            new google.maps.Size(50, 50),\n";
+            echo "            new google.maps.Point(0, 0),\n";
+            echo "            new google.maps.Point(25, 67),\n";
+            echo "            new google.maps.Size(50, 50)\n";
+            echo "        );\n";
+        }
         echo "        var marker$userId = new google.maps.Marker({\n";
         echo "            map: map,\n";
         echo "            title: '" . $fullnames[$userId] . "',\n";
-        echo "            position: path$userId" . "[path$userId.length - 1]\n";
+        echo "            position: path$userId" . "[path$userId.length - 1],\n";
+        if (!is_null($profileImages[$userId])) {
+            echo "            shadow: markerImageShadow,\n";
+            echo "            icon: markerImage$userId\n";
+        } else {
+            echo "            icon: markerImageShadow\n";
+        }
         echo "        });\n";
     }
 
