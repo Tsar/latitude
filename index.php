@@ -71,7 +71,8 @@
         echo "            strokeColor: '" . $colors[($userId - 1) % $colorsNum] . "',\n";
         echo "            strokeWeight: 2,\n";
         echo "            strokeOpacity: 0.8,\n";
-        echo "            path: path$userId\n";
+        echo "            path: path$userId,\n";
+        echo "            geodesic: true\n";
         echo "        });\n";
         echo "        var marker$userId = new google.maps.Marker({\n";
         echo "            map: map,\n";
