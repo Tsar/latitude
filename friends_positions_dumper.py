@@ -84,10 +84,12 @@ if __name__ == "__main__":
             maxUserId = int(user_id)
 
     lastUpdateTime = {}
-    cur.execute('SELECT user_id, last_update_time FROM users')
+    profileImages = {}
+    cur.execute('SELECT user_id, last_update_time, profile_image FROM users')
     for row in cur:
-        user_id, last_update_time = row
-        lastUpdateTime[user_id] = last_update_time
+        user_id, last_update_time, profile_image = row
+        lastUpdateTime[user_id] = int(last_update_time)
+        profileImages[user_id] = profile_image
 
     email = ""
     password = ""
@@ -181,14 +183,21 @@ if __name__ == "__main__":
                                 maxUserId += 1
                                 cur.execute('INSERT INTO email_to_user_id (email, user_id) VALUES (%s, %d)' % (conn.escape(info[2]), maxUserId))
                                 emailToUserId[info[2]] = maxUserId
-                                cur.execute('INSERT INTO users (user_id, last_update_time, email, fullname, firstname, lastname, googleplus) VALUES (%d, "", %s, %s, %s, %s, %s)' % (maxUserId, conn.escape(info[2]), conn.escape(info[3]), conn.escape(info[19]), conn.escape(info[20]), conn.escape(info[30])))
-                                lastUpdateTime[maxUserId] = ""
+                                cur.execute('INSERT INTO users (user_id, last_update_time, email, fullname, firstname, lastname, googleplus) VALUES (%d, 0, %s, %s, %s, %s, %s)' % (maxUserId, conn.escape(info[2]), conn.escape(info[3]), conn.escape(info[19]), conn.escape(info[20]), conn.escape(info[30])))
+                                lastUpdateTime[maxUserId] = 0
+                                profileImages[maxUserId] = None
 
                             userId = emailToUserId[info[2]]
-                            if info[7] != lastUpdateTime[userId]:
-                                cur.execute('UPDATE users SET last_update_time = %s WHERE user_id = %d' % (conn.escape(info[7]), userId))
-                                lastUpdateTime[userId] = info[7]
-                                cur.execute('INSERT INTO pos_history (user_id, coord1, coord2, timestamp) VALUES (%d, %d, %d, %s)' % (userId, info[5], info[6], conn.escape(info[7])))
+                            if int(info[7]) != lastUpdateTime[userId]:
+                                cur.execute('UPDATE users SET last_update_time = %d WHERE user_id = %d' % (int(info[7]), userId))
+                                lastUpdateTime[userId] = int(info[7])
+                                cur.execute('INSERT INTO pos_history (user_id, coord1, coord2, timestamp) VALUES (%d, %d, %d, %d)' % (userId, info[5], info[6], int(info[7])))
+
+                            if info[13] != None:
+                                prImage = "https://latitude.google.com/latitude/b/0/profileImage?fid=%d&url=%s&sz=32" % (int(info[1][1]), info[13])
+                                if prImage != profileImages[userId]:
+                                    cur.execute('UPDATE users SET profile_image = %s WHERE user_id = %d' % (conn.escape(prImage), userId))
+                                    profileImages[userId] = prImage
 
                         logger.addToLogWithNoTimestamp("DONE")
                     except:

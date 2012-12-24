@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 3.5.1
+-- version 3.5.4
 -- http://www.phpmyadmin.net
 --
 -- Host: localhost
--- Generation Time: Dec 10, 2012 at 04:40 PM
--- Server version: 5.1.61-log
--- PHP Version: 5.3.10-pl0-gentoo
+-- Generation Time: Dec 24, 2012 at 06:13 PM
+-- Server version: 5.5.28-0ubuntu0.12.04.3
+-- PHP Version: 5.3.10-1ubuntu3.4
 
 SET SQL_MODE="NO_AUTO_VALUE_ON_ZERO";
 SET time_zone = "+00:00";
@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS `pos_history` (
   `user_id` int(11) NOT NULL,
   `coord1` int(32) NOT NULL,
   `coord2` int(32) NOT NULL,
-  `timestamp` varchar(20) NOT NULL,
+  `timestamp` bigint(64) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
 
@@ -57,7 +57,7 @@ CREATE TABLE IF NOT EXISTS `raw_json_dumps` (
   `timestamp` datetime NOT NULL,
   `data` longtext NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
 
 -- --------------------------------------------------------
 
@@ -67,12 +67,13 @@ CREATE TABLE IF NOT EXISTS `raw_json_dumps` (
 
 CREATE TABLE IF NOT EXISTS `users` (
   `user_id` int(11) NOT NULL,
-  `last_update_time` varchar(20) NOT NULL,
+  `last_update_time` bigint(64) NOT NULL,
   `email` text,
   `fullname` text,
   `firstname` text,
   `lastname` text,
   `googleplus` text,
+  `profile_image` text,
   PRIMARY KEY (`user_id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
