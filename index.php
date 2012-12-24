@@ -131,7 +131,7 @@
         echo "    google.maps.event.addListener(marker$userId, 'click', function(event) {\n";
         echo "        infoWindowFixed = !infoWindowFixed;\n";
         echo "        if (infoWindowFixed) {\n";
-        echo "            infoWindow.setContent('<table bgcolor=\"#EEFFEE\"$infoWindowContent');\n";
+        echo "            infoWindow.setContent('<table bgcolor=\"#CCFFCC\"$infoWindowContent');\n";
         echo "        } else {\n";
         echo "            infoWindow.setContent('<table$infoWindowContent');\n";
         echo "        }\n";
