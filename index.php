@@ -1,3 +1,50 @@
+<?php
+
+$db_server = 'localhost';
+$db_user   = 'latitude_palevo';
+$db_passwd = 'uQVyav38Wz9nmysz';
+$db_name   = 'latitude_palevo';
+
+$m = new mysqli($db_server, $db_user, $db_passwd, $db_name);
+
+function makePathsFromQueryResult($result) {
+    $paths = array();
+    while ($row = $result->fetch_assoc()) {
+        $userId = $row['user_id'];
+        $lat = $row['coord1'] / 1E6;
+        $lon = $row['coord2'] / 1E6;
+        if (array_key_exists($userId, $paths)) {
+            $paths[$userId] .= ",$lat,$lon";
+        } else {
+            $paths[$userId] = "$lat,$lon";
+        }
+    }
+    return $paths;
+}
+
+if (isset($_GET['get_paths']) && ($_GET['get_paths'] === "1") && isset($_GET['start_date']) && isset($_GET['end_date']) && isset($_GET['user_ids_string'])) {
+
+    $startDate = DateTime::createFromFormat('Y-m-d|', $_GET['start_date'])->getTimestamp();
+    $endDate   = DateTime::createFromFormat('Y-m-d|', $_GET['end_date'])->getTimestamp() + 86400;
+
+    $result = $m->query('SELECT user_id, coord1, coord2 FROM pos_history WHERE valid = 1 AND timestamp >= ' . ($startDate * 1000) . ' AND timestamp < ' . ($endDate * 1000) . ' ORDER BY id');
+    $paths = makePathsFromQueryResult($result);
+
+    $userIds = explode('_', $_GET['user_ids_string']);
+    $resPaths = array();
+    foreach ($userIds as $userId) {
+        if (array_key_exists($userId, $paths)) {
+            $resPaths[$userId] = $paths[$userId];
+        } else {
+            $resPaths[$userId] = '';
+        }
+    }
+    echo implode('#', $resPaths);
+
+} else {
+
+?>
+
 <!DOCTYPE html>
 <html>
   <head>
@@ -8,30 +55,12 @@
       body { height: 100%; margin: 0; padding: 0 }
       #map_canvas { height: 100% }
     </style>
-    <script type="text/javascript"
-      src="https://maps.googleapis.com/maps/api/js?sensor=false">
-    </script>
+    <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?sensor=false"></script>
+    <script type="text/javascript" src="xmlhttp.js"></script>
 <?php
 
-    $db_server = 'localhost';
-    $db_user   = 'latitude_palevo';
-    $db_passwd = 'uQVyav38Wz9nmysz';
-    $db_name   = 'latitude_palevo';
-
-    $m = new mysqli($db_server, $db_user, $db_passwd, $db_name);
-
     $result = $m->query('SELECT user_id, coord1, coord2 FROM pos_history WHERE valid = 1 ORDER BY id');
-    $paths = array();
-    while ($row = $result->fetch_assoc()) {
-        $userId = $row['user_id'];
-        $lat = $row['coord1'] / 1E6;
-        $lon = $row['coord2'] / 1E6;
-        if (array_key_exists($userId, $paths)) {
-            $paths[$userId] .= ", $lat, $lon";
-        } else {
-            $paths[$userId] = "$lat, $lon";
-        }
-    }
+    $paths = makePathsFromQueryResult($result);
 
     $result = $m->query('SELECT user_id, fullname, last_update_time, profile_image, googleplus FROM users');
     $fullnames = array();
@@ -47,6 +76,16 @@
 
 ?>
     <script type="text/javascript">
+      var XMLHttp = getXMLHttp();
+
+<?php
+    $userIdsString = implode('_', array_keys($paths));
+
+    foreach ($paths as $userId => $path) {
+        echo "      var polyline$userId;\n";
+    }
+?>
+
       function initialize() {
 <?php
 
@@ -64,8 +103,7 @@
             zoom: 11,
             mapTypeId: google.maps.MapTypeId.ROADMAP
         };
-        var map = new google.maps.Map(document.getElementById("map_canvas"),
-            mapOptions);
+        var map = new google.maps.Map(document.getElementById("map_canvas"), mapOptions);
 
         var markerImageShadow = new google.maps.MarkerImage('my_friend_placard.png',
                                                             new google.maps.Size(64, 78),
@@ -79,7 +117,7 @@
     $colorsNum = count($colors);
 
     foreach ($paths as $userId => $path) {
-        echo "        var polyline$userId = new google.maps.Polyline({\n";
+        echo "        polyline$userId = new google.maps.Polyline({\n";
         echo "            map: map,\n";
         echo "            strokeColor: '" . $colors[($userId - 1) % $colorsNum] . "',\n";
         echo "            strokeWeight: 2,\n";
@@ -140,9 +178,65 @@
 
 ?>
       }
+
+      function applyDateRange() {
+          document.getElementById('applyStatus').innerHTML = '<i>Обновление...</i>';
+          XMLHttp.open("GET", "?get_paths=1&user_ids_string=<?php echo $userIdsString; ?>&start_date=" + document.getElementById('startDate').value + "&end_date=" + document.getElementById('endDate').value);
+          XMLHttp.onreadystatechange = handlePaths;
+          XMLHttp.send(null);
+      }
+
+      function handlePaths() {
+        if (XMLHttp.readyState == 4) {
+            var paths = XMLHttp.responseText.split("#");
+<?php
+    $ii = 0;
+    foreach ($paths as $userId => $path) {
+        echo "            if (paths[$ii] == \"\") {\n";
+        echo "                polyline$userId.setPath([]);\n";
+        echo "            } else {\n";
+        echo "                var pathCoords$userId = paths[$ii].split(\",\");\n";
+        echo "                var path$userId = [];\n";
+        echo "                for (var i = 0, i_end = pathCoords$userId.length / 2; i < i_end; ++i) {\n";
+        echo "                    path$userId.push(new google.maps.LatLng(parseFloat(pathCoords$userId" . "[i * 2]), parseFloat(pathCoords$userId" . "[i * 2 + 1])));\n";
+        echo "                }\n";
+        echo "                polyline$userId.setPath(path$userId);\n";
+        echo "            }\n";
+        ++$ii;
+    }
+?>
+            document.getElementById('applyStatus').innerHTML = '<i>Готово</i>';
+        }
+    }
     </script>
   </head>
   <body onload="initialize()">
-    <div id="map_canvas" style="width:100%; height:100%"></div>
+    <table width="100%" height="100%">
+      <tr>
+        <td id="map_canvas" style="width:80%; height:100%"></td>
+        <td valign="top">
+          <table align="center">
+            <tr><td colspan="2"><h2>Отображать диапазон</h2></td></tr>
+            <tr>
+              <td>С:</td>
+              <td><input type="date" id="startDate" value="<?php echo date('Y-m-d'); ?>" max="<?php echo date('Y-m-d'); ?>" /></td>
+            </tr>
+            <tr>
+              <td>До:</td>
+              <td><input type="date" id="endDate" value="<?php echo date('Y-m-d'); ?>" max="<?php echo date('Y-m-d'); ?>" /></td>
+            </tr>
+            <tr>
+              <td colspan="2" align="center"><input type="submit" value="Применить" onclick="applyDateRange()" /></td>
+            </tr>
+            <tr>
+              <td id="applyStatus" colspan="2" align="center"></td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
   </body>
 </html>
+<?php
+}
+?>
