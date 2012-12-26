@@ -177,6 +177,7 @@ function Epoch(name,mode,targetelement,multiselect) {
 	*/
 	function createFooter() {
 		var container = document.createElement('div');
+        /*
 		var clearSelected = document.createElement('input');
 		clearSelected.setAttribute('type','button');
 		clearSelected.setAttribute('value',self.clearbtn_caption);
@@ -184,6 +185,7 @@ function Epoch(name,mode,targetelement,multiselect) {
 		clearSelected.owner = self;
 		addEventHandler(clearSelected,'click',function() {self.resetSelections(false);});
 		container.appendChild(clearSelected);
+		*/
 		if(self.mode == 'popup') {
 			var closeBtn = document.createElement('input');
 			closeBtn.setAttribute('type','button');
