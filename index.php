@@ -44,7 +44,6 @@ if (isset($_GET['get_paths']) && ($_GET['get_paths'] === "1") && isset($_GET['st
 } else {
 
 ?>
-
 <!DOCTYPE html>
 <html>
   <head>
@@ -59,64 +58,54 @@ if (isset($_GET['get_paths']) && ($_GET['get_paths'] === "1") && isset($_GET['st
     <script type="text/javascript" src="xmlhttp.js"></script>
 <?php
 
-    $result = $m->query('SELECT user_id, coord1, coord2 FROM pos_history WHERE valid = 1 ORDER BY id');
-    $paths = makePathsFromQueryResult($result);
-
-    $result = $m->query('SELECT user_id, fullname, last_update_time, profile_image, googleplus FROM users');
+    $result = $m->query('SELECT u.user_id, u.fullname, u.last_update_time, u.profile_image, u.googleplus, p.coord1, p.coord2 FROM users AS u, pos_history AS p WHERE u.user_id = p.user_id AND u.last_update_time = p.timestamp');
     $fullnames = array();
     $lastUpdateTime = array();
     $profileImages = array();
     $googleplus = array();
+    $currentPositions = array();
     while ($row = $result->fetch_assoc()) {
         $fullnames[$row['user_id']] = $row['fullname'];
         $lastUpdateTime[$row['user_id']] = $row['last_update_time'];
         $profileImages[$row['user_id']] = $row['profile_image'];
         $googleplus[$row['user_id']] = $row['googleplus'];
+        $currentPositions[$row['user_id']] = 'new google.maps.LatLng(' . ($row['coord1'] / 1E6) . ', ' . ($row['coord2'] / 1E6) . ')';
     }
+
+    $userIds = array_keys($lastUpdateTime);
+    $userIdsString = implode('_', $userIds);
 
 ?>
     <script type="text/javascript">
       var XMLHttp = getXMLHttp();
 
 <?php
-    $userIdsString = implode('_', array_keys($paths));
-
-    foreach ($paths as $userId => $path) {
+    foreach ($userIds as $userId) {
+        echo "      var path$userId = [];\n";
         echo "      var polyline$userId;\n";
     }
 ?>
 
       function initialize() {
-<?php
+          var mapOptions = {
+              center: new google.maps.LatLng(59.940568, 30.121078),
+              zoom: 11,
+              mapTypeId: google.maps.MapTypeId.ROADMAP
+          };
+          var map = new google.maps.Map(document.getElementById("map_canvas"), mapOptions);
 
-    foreach ($paths as $userId => $path) {
-        echo "        var pathCoords$userId = [$path];\n";
-        echo "        var path$userId = [];\n";
-        echo "        for (var i = 0, i_end = pathCoords$userId.length / 2; i < i_end; ++i) {\n";
-        echo "            path$userId.push(new google.maps.LatLng(parseFloat(pathCoords$userId" . "[i * 2]), parseFloat(pathCoords$userId" . "[i * 2 + 1])));\n";
-        echo "        }\n";
-    }
-
-?>
-        var mapOptions = {
-            center: new google.maps.LatLng(59.940568, 30.121078),
-            zoom: 11,
-            mapTypeId: google.maps.MapTypeId.ROADMAP
-        };
-        var map = new google.maps.Map(document.getElementById("map_canvas"), mapOptions);
-
-        var markerImageShadow = new google.maps.MarkerImage('my_friend_placard.png',
-                                                            new google.maps.Size(64, 78),
-                                                            new google.maps.Point(0, 0),
-                                                            new google.maps.Point(32, 72));
-        var infoWindow = new google.maps.InfoWindow({content: 'empty'});
-        var infoWindowFixed = false;
+          var markerImageShadow = new google.maps.MarkerImage('my_friend_placard.png',
+                                                              new google.maps.Size(64, 78),
+                                                              new google.maps.Point(0, 0),
+                                                              new google.maps.Point(32, 72));
+          var infoWindow = new google.maps.InfoWindow({content: 'empty'});
+          var infoWindowFixed = false;
 <?php
 
     $colors = array("#FF0000", "#009900", "#0000FF", "#FF00FF", "#000000");
     $colorsNum = count($colors);
 
-    foreach ($paths as $userId => $path) {
+    foreach ($userIds as $userId) {
         echo "        polyline$userId = new google.maps.Polyline({\n";
         echo "            map: map,\n";
         echo "            strokeColor: '" . $colors[($userId - 1) % $colorsNum] . "',\n";
@@ -138,7 +127,7 @@ if (isset($_GET['get_paths']) && ($_GET['get_paths'] === "1") && isset($_GET['st
         echo "        var marker$userId = new google.maps.Marker({\n";
         echo "            map: map,\n";
         echo "            title: '" . $fullnames[$userId] . "',\n";
-        echo "            position: path$userId" . "[path$userId.length - 1],\n";
+        echo "            position: " . $currentPositions[$userId] . ",\n";
         if (!is_null($profileImages[$userId])) {
             echo "            shadow: markerImageShadow,\n";
             echo "            icon: markerImage$userId\n";
@@ -158,7 +147,7 @@ if (isset($_GET['get_paths']) && ($_GET['get_paths'] === "1") && isset($_GET['st
 
         echo "    google.maps.event.addListener(marker$userId, 'mouseover', function(event) {\n";
         echo "        if (!infoWindowFixed) {\n";
-        echo "            infoWindow.setContent('<table$infoWindowContent');";
+        echo "            infoWindow.setContent('<table$infoWindowContent');\n";
         echo "            infoWindow.open(map, this);\n";
         echo "        }\n";
         echo "    });\n";
@@ -177,6 +166,7 @@ if (isset($_GET['get_paths']) && ($_GET['get_paths'] === "1") && isset($_GET['st
     }
 
 ?>
+          applyDateRange();
       }
 
       function applyDateRange() {
@@ -191,12 +181,12 @@ if (isset($_GET['get_paths']) && ($_GET['get_paths'] === "1") && isset($_GET['st
             var paths = XMLHttp.responseText.split("#");
 <?php
     $ii = 0;
-    foreach ($paths as $userId => $path) {
+    foreach ($userIds as $userId) {
         echo "            if (paths[$ii] == \"\") {\n";
         echo "                polyline$userId.setPath([]);\n";
         echo "            } else {\n";
         echo "                var pathCoords$userId = paths[$ii].split(\",\");\n";
-        echo "                var path$userId = [];\n";
+        echo "                path$userId = [];\n";
         echo "                for (var i = 0, i_end = pathCoords$userId.length / 2; i < i_end; ++i) {\n";
         echo "                    path$userId.push(new google.maps.LatLng(parseFloat(pathCoords$userId" . "[i * 2]), parseFloat(pathCoords$userId" . "[i * 2 + 1])));\n";
         echo "                }\n";
