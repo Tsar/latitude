@@ -54,8 +54,10 @@ if (isset($_GET['get_paths']) && ($_GET['get_paths'] === "1") && isset($_GET['st
       body { height: 100%; margin: 0; padding: 0 }
       #map_canvas { height: 100% }
     </style>
+    <link rel="stylesheet" type="text/css" href="epoch_styles.css" />
     <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?sensor=false"></script>
     <script type="text/javascript" src="xmlhttp.js"></script>
+    <script type="text/javascript" src="epoch_classes.js"></script>
 <?php
 
     $result = $m->query('SELECT u.user_id, u.fullname, u.last_update_time, u.profile_image, u.googleplus, p.coord1, p.coord2 FROM users AS u, pos_history AS p WHERE u.user_id = p.user_id AND u.last_update_time = p.timestamp');
@@ -166,6 +168,7 @@ if (isset($_GET['get_paths']) && ($_GET['get_paths'] === "1") && isset($_GET['st
     }
 
 ?>
+          singleDate = new Epoch('singleDate', 'flat', document.getElementById('singleDate'));
           applyDateRange();
       }
 
@@ -203,9 +206,11 @@ if (isset($_GET['get_paths']) && ($_GET['get_paths'] === "1") && isset($_GET['st
   <body onload="initialize()">
     <table width="100%" height="100%">
       <tr>
-        <td id="map_canvas" style="width:80%; height:100%"></td>
+        <td width="80%" height="100%"><div id="map_canvas"></div></td>
         <td valign="top">
           <table align="center">
+            <tr><td colspan="2"><h2>Отображать день</h2></td></tr>
+            <tr><td colspan="2"><div id="singleDate"></div></td></tr>
             <tr><td colspan="2"><h2>Отображать диапазон</h2></td></tr>
             <tr>
               <td>С:</td>
