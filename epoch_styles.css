@@ -96,10 +96,11 @@ table.cells td.wkend {
 	background-color: #DDDDDD;
 }
 table.cells td.curdate {
-
+    background-color: #99CCFF;
+    color: black;
 }
 table.cells td.cell_selected {
-	background-color: #99CCFF;
+	background-color: #FFFF99;
 	color: black;
 }
 table.cells td.notmnth {

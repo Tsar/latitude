@@ -168,7 +168,7 @@ if (isset($_GET['get_paths']) && ($_GET['get_paths'] === "1") && isset($_GET['st
     }
 
 ?>
-          singleDate = new Epoch('singleDate', 'flat', document.getElementById('singleDate'));
+          singleDate = new Epoch('calSD', 'flat', document.getElementById('singleDate'), false);
           applyDateRange();
       }
 
