@@ -169,20 +169,42 @@ if (isset($_GET['get_paths']) && ($_GET['get_paths'] === "1") && isset($_GET['st
 
 ?>
           singleDate = new Epoch('calSD', 'flat', document.getElementById('singleDate'), false);
+          rangeStartDate = new Epoch('calRSD', 'flat', document.getElementById('rangeStartDate'), false);
+          rangeEndDate = new Epoch('calRED', 'flat', document.getElementById('rangeEndDate'), false);
+
           singleDate.clicked = function() {
-              document.getElementById('applyStatus').innerHTML = '<i>Обновление...</i>';
-              var dt = singleDate.selectedDates[0];
-              var dtStr = dt.getFullYear() + "-" + (dt.getMonth() + 1) + "-" + dt.getDate();
-              XMLHttp.open("GET", "?get_paths=1&user_ids_string=<?php echo $userIdsString; ?>&start_date=" + dtStr + "&end_date=" + dtStr);
-              XMLHttp.onreadystatechange = handlePaths;
-              XMLHttp.send(null);
+              rangeStartDate.resetSelections(false);
+              rangeEndDate.resetSelections(false);
+              applyDate(getCalendarDate(singleDate));
           };
-          applyDateRange();
+
+          rangeStartDate.clicked = function() {
+              var dt1 = getCalendarDate(rangeStartDate);
+              var dt2 = getCalendarDate(rangeEndDate);
+              if (dt1 != null && dt2 != null) {
+                  singleDate.resetSelections(false);
+                  applyDateRange(dt1, dt2);
+              }
+          };
+          rangeEndDate.clicked = rangeStartDate.clicked;
+
+          applyDate("<?php echo date('Y-m-d'); ?>");
       }
 
-      function applyDateRange() {
+      function getCalendarDate(calendar) {
+          if (calendar.selectedDates.length == 0)
+              return null;
+          var dt = calendar.selectedDates[0];
+          return dt.getFullYear() + "-" + (dt.getMonth() + 1) + "-" + dt.getDate();
+      }
+
+      function applyDate(dtDate) {
+          applyDateRange(dtDate, dtDate);
+      }
+
+      function applyDateRange(dtRangeStart, dtRangeEnd) {
           document.getElementById('applyStatus').innerHTML = '<i>Обновление...</i>';
-          XMLHttp.open("GET", "?get_paths=1&user_ids_string=<?php echo $userIdsString; ?>&start_date=" + document.getElementById('startDate').value + "&end_date=" + document.getElementById('endDate').value);
+          XMLHttp.open("GET", "?get_paths=1&user_ids_string=<?php echo $userIdsString; ?>&start_date=" + dtRangeStart + "&end_date=" + dtRangeEnd);
           XMLHttp.onreadystatechange = handlePaths;
           XMLHttp.send(null);
       }
@@ -222,15 +244,13 @@ if (isset($_GET['get_paths']) && ($_GET['get_paths'] === "1") && isset($_GET['st
             <tr><td colspan="2"><h2>Отображать диапазон</h2></td></tr>
             <tr>
               <td>С:</td>
-              <td><input type="date" id="startDate" value="<?php echo date('Y-m-d'); ?>" max="<?php echo date('Y-m-d'); ?>" /></td>
+              <td><div id="rangeStartDate"></div></td>
             </tr>
             <tr>
               <td>До:</td>
-              <td><input type="date" id="endDate" value="<?php echo date('Y-m-d'); ?>" max="<?php echo date('Y-m-d'); ?>" /></td>
+              <td><div id="rangeEndDate"></div></td>
             </tr>
-            <tr>
-              <td colspan="2" align="center"><input type="submit" value="Применить" onclick="applyDateRange()" /></td>
-            </tr>
+            <tr><td colspan="2"><h2>Состояние</h2></td></tr>
             <tr>
               <td id="applyStatus" colspan="2" align="center"></td>
             </tr>
