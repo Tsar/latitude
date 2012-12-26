@@ -169,6 +169,14 @@ if (isset($_GET['get_paths']) && ($_GET['get_paths'] === "1") && isset($_GET['st
 
 ?>
           singleDate = new Epoch('calSD', 'flat', document.getElementById('singleDate'), false);
+          singleDate.clicked = function() {
+              document.getElementById('applyStatus').innerHTML = '<i>Обновление...</i>';
+              var dt = singleDate.selectedDates[0];
+              var dtStr = dt.getFullYear() + "-" + (dt.getMonth() + 1) + "-" + dt.getDate();
+              XMLHttp.open("GET", "?get_paths=1&user_ids_string=<?php echo $userIdsString; ?>&start_date=" + dtStr + "&end_date=" + dtStr);
+              XMLHttp.onreadystatechange = handlePaths;
+              XMLHttp.send(null);
+          };
           applyDateRange();
       }
 

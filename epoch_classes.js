@@ -730,6 +730,8 @@ function Epoch(name,mode,targetelement,multiselect) {
 	self.yearSelect;
 	self.mousein = false;
 
+    self.clicked = function() {};
+
 	//Initialize the calendar and its variables{
 	calConfig();
 	setLang();
@@ -822,6 +824,7 @@ function CalCell(owner,tableCell,dateObj,row,week) {
 				owner.reDraw(); //redraw all the calendar cells
 			}
 		}
+		owner.clicked();
 	}
 	//-----------------------------------------------------------------------------
 	/**
