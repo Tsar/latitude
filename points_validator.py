@@ -39,7 +39,9 @@ if __name__ == "__main__":
     cur.execute('SELECT id, user_id, coord1, coord2, timestamp FROM pos_history WHERE valid = 1 ORDER BY id')
     for row in cur:
         id, u, coord1, coord2, timestamp = row
-        timestamp /= 3600000
+        timestamp /= 3600000.0
+        coord1 /= 1000000.0
+        coord2 /= 1000000.0
 
         if not u in lvp:
             lvp[u] = (coord1, coord2, timestamp)
@@ -47,5 +49,6 @@ if __name__ == "__main__":
             if distance((lvp[u][0], lvp[u][1]), (coord1, coord2)) / (timestamp - lvp[u][2]) > 2000:
                 # Current point invalid
                 cur2.execute('UPDATE pos_history SET valid = 0 WHERE id = %d' % id)
+                print("point is considered to be invalid: (%f, %f), id = %d" % (coord1, coord2, id))
             else:
                 lvp[u] = (coord1, coord2, timestamp)
