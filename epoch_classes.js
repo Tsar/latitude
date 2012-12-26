@@ -25,8 +25,8 @@ function Epoch(name,mode,targetelement,multiselect) {
 		self.displayYear = self.displayYearInitial;
 		self.displayMonth = self.displayMonthInitial;
 		self.minDate = new Date(2012,10,1);
-		self.maxDate = new Date(2020,11,31);
-		self.startDay = 0; // the day the week will 'start' on: 0(Sun) to 6(Sat)
+		self.maxDate = new Date(2222,11,31);
+		self.startDay = 1; // the day the week will 'start' on: 0(Sun) to 6(Sat)
 		self.showWeeks = true; //whether the week numbers will be shown
 		self.selCurMonthOnly = true; //allow user to only select dates in the currently displayed month
 	}
@@ -36,15 +36,15 @@ function Epoch(name,mode,targetelement,multiselect) {
 	* Check Date.dateFormat() for the Date object's language settings
 	*/
 	function setLang() {
-		self.daylist = new Array('S','M','T','W','T','F','S','S','M','T','W','T','F','S');
-		self.months_sh = new Array('Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec');
-		self.monthup_title = 'Go to the next month';
-		self.monthdn_title = 'Go to the previous month';
-		self.clearbtn_caption = 'Clear';
-		self.clearbtn_title = 'Clears any dates selected on the calendar';
-		self.maxrange_caption = 'This is the maximum range';
-		self.closebtn_caption = 'Close';
-		self.closebtn_title = 'Close the calendar';
+		self.daylist = new Array('Вс','Пн','Вт','Ср','Чт','Пт','Сб','Вс','Пн','Вт','Ср','Чт','Пт','Сб');
+		self.months_sh = new Array('Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг','Сен','Окт','Ноя','Дек');
+		self.monthup_title = 'Следующий месяц';
+		self.monthdn_title = 'Предыдущий месяц';
+		self.clearbtn_caption = 'Сброс';
+		self.clearbtn_title = 'Сброс выбранных дат';
+		self.maxrange_caption = 'Выход за допустимый диапазон';
+		self.closebtn_caption = 'Закрыть';
+		self.closebtn_title = 'Закрыть календарь';
 	}
 	//-----------------------------------------------------------------------------
 	/**
