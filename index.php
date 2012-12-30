@@ -79,11 +79,16 @@ if (isset($_GET['get_paths']) && ($_GET['get_paths'] === "1") && isset($_GET['st
 
 ?>
     <script type="text/javascript">
+      var map;
       var XMLHttp = getXMLHttp();
+
+      var imgPathPoint = new google.maps.MarkerImage('path_point.png', new google.maps.Size(9, 9), new google.maps.Point(0, 0), new google.maps.Point(5, 5));
+      var imgInvalidPathPoint = new google.maps.MarkerImage('invalid_path_point.png', new google.maps.Size(7, 7), new google.maps.Point(0, 0), new google.maps.Point(4, 4));
 
 <?php
     foreach ($userIds as $userId) {
         echo "      var path$userId = [];\n";
+        echo "      var pathPoints$userId = [];\n";
         echo "      var polyline$userId;\n";
     }
 ?>
@@ -94,7 +99,7 @@ if (isset($_GET['get_paths']) && ($_GET['get_paths'] === "1") && isset($_GET['st
               zoom: 11,
               mapTypeId: google.maps.MapTypeId.ROADMAP
           };
-          var map = new google.maps.Map(document.getElementById("map_canvas"), mapOptions);
+          map = new google.maps.Map(document.getElementById("map_canvas"), mapOptions);
 
           var markerImageShadow = new google.maps.MarkerImage('my_friend_placard.png',
                                                               new google.maps.Size(64, 78),
@@ -220,8 +225,21 @@ if (isset($_GET['get_paths']) && ($_GET['get_paths'] === "1") && isset($_GET['st
         echo "            } else {\n";
         echo "                var pathCoords$userId = paths[$ii].split(\",\");\n";
         echo "                path$userId = [];\n";
+
+        echo "                for (var i = 0, i_end = pathPoints$userId.length; i < i_end; ++i) {\n";
+        echo "                    pathPoints$userId" . "[i].setMap(null);\n";
+        echo "                }\n";
+        echo "                pathPoints$userId = [];\n";
+
         echo "                for (var i = 0, i_end = pathCoords$userId.length / 2; i < i_end; ++i) {\n";
         echo "                    path$userId.push(new google.maps.LatLng(parseFloat(pathCoords$userId" . "[i * 2]), parseFloat(pathCoords$userId" . "[i * 2 + 1])));\n";
+
+        echo "                    pathPoints$userId.push(new google.maps.Marker({\n";
+        echo "                        map: map,\n";
+        echo "                        position: path$userId" . "[path$userId.length - 1],\n";
+        echo "                        icon: imgPathPoint\n";
+        echo "                    }));\n";
+
         echo "                }\n";
         echo "                polyline$userId.setPath(path$userId);\n";
         echo "            }\n";
