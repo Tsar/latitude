@@ -55,6 +55,8 @@ if (isset($_GET['get_paths']) && ($_GET['get_paths'] === "1") && isset($_GET['st
       html { height: 100% }
       body { height: 100%; margin: 0; padding: 0 }
       #map_canvas { height: 100% }
+      #color_table { width: 100%; height: 100%; table-layout: fixed }
+      #color_table td { cursor: pointer }
     </style>
     <link rel="stylesheet" type="text/css" href="epoch_styles.css" />
     <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?sensor=false"></script>
@@ -103,6 +105,7 @@ if (isset($_GET['get_paths']) && ($_GET['get_paths'] === "1") && isset($_GET['st
         echo "      var pathPoints$userId = [];\n";
         echo "      var polyline$userId;\n";
         echo "      var marker$userId;\n";
+        echo "      var showUser$userId = true;\n";
     }
 ?>
       function initialize() {
@@ -121,7 +124,7 @@ if (isset($_GET['get_paths']) && ($_GET['get_paths'] === "1") && isset($_GET['st
           var infoWindowFixed = false;
 <?php
 
-    $colors = array("#FF0000", "#009900", "#0000FF", "#FF00FF", "#000000", "#00BFFF", "#FFA500", "#8B8682");
+    $colors = array("#FF0000", "#009900", "#0000FF", "#FF00FF", "#000000", "#00BFFF", "#FFA500", "#8B8682", "#800000");
     $colorsNum = count($colors);
 
     foreach ($userIds as $userId) {
@@ -236,7 +239,7 @@ if (isset($_GET['get_paths']) && ($_GET['get_paths'] === "1") && isset($_GET['st
           showCurPos = cb.checked;
 <?php
     foreach ($userIds as $userId) {
-        echo "          marker$userId.setMap(showCurPos ? map : null);\n";
+        echo "          marker$userId.setMap((showCurPos && showUser$userId) ? map : null);\n";
     }
 ?>
       }
@@ -250,7 +253,17 @@ if (isset($_GET['get_paths']) && ($_GET['get_paths'] === "1") && isset($_GET['st
           showInvalidPathPoints = cb.checked;
           refreshPaths();
       }
-
+<?php
+    foreach ($userIds as $userId) {
+        echo "      function toggleShowUser$userId(td) {\n";
+        echo "          showUser$userId = !showUser$userId;\n";
+        echo "          tg = (showUser$userId ? 'b' : 's');\n";
+        echo "          td.innerHTML = '<font color=\"#FFFFFF\" size=\"2\"><' + tg + '>" . $fullnames[$userId] . "</' + tg + '></font>';\n";
+        echo "          marker$userId.setMap((showCurPos && showUser$userId) ? map : null);\n";
+        echo "          refreshPaths();\n";
+        echo "      }\n";
+    }
+?>
       function handlePaths() {
         if (XMLHttp.readyState == 4) {
             var paths = XMLHttp.responseText.split("#");
@@ -262,7 +275,7 @@ if (isset($_GET['get_paths']) && ($_GET['get_paths'] === "1") && isset($_GET['st
         echo "            }\n";
         echo "            pathPoints$userId = [];\n";
 
-        echo "            if (paths[$ii] == \"\") {\n";
+        echo "            if (paths[$ii] == \"\" || !showUser$userId) {\n";
         echo "                polyline$userId.setPath([]);\n";
         echo "            } else {\n";
         echo "                var pathCoords$userId = paths[$ii].split(\",\");\n";
@@ -309,6 +322,7 @@ if (isset($_GET['get_paths']) && ($_GET['get_paths'] === "1") && isset($_GET['st
             <tr><td colspan="2"><label><input type="checkbox" onchange="toggleShowCurPos(this);" checked />Отображать текущие позиции</label></td></tr>
             <tr><td colspan="2"><label><input type="checkbox" onchange="toggleShowPathPoints(this);" checked />Отображать точки маршрутов <img src="path_point.png" alt="Точка маршрута" /></label></td></tr>
             <tr><td colspan="2"><label><input type="checkbox" onchange="toggleShowInvalidPathPoints(this);" />Отображать невалидные точки маршрутов <img src="invalid_path_point.png" alt="Невалидная точка маршрута" /></label></td></tr>
+            <tr><td colspan="2"><i>Примечание.</i> Включить/выключить отображение человека можно нажав на его прямоугольник внизу страницы.</td></tr>
 
             <tr><td colspan="2"><h2>Состояние</h2></td></tr>
             <tr><td id="applyStatus" colspan="2" align="center"></td></tr>
@@ -330,14 +344,13 @@ if (isset($_GET['get_paths']) && ($_GET['get_paths'] === "1") && isset($_GET['st
       </tr>
       <tr>
         <td colspan="2">
-          <table width="100%" height="100%" style="table-layout: fixed">
+          <table id="color_table">
             <tr>
 <?php
     sort($userIds);
     foreach ($userIds as $userId) {
         $curColor = $colors[($userId - 1) % $colorsNum];
-        #$oppositeColor = '#' . dechex(255 - hexdec(substr($curColor, 1, 2))) . dechex(255 - hexdec(substr($curColor, 3, 2))) . dechex(255 - hexdec(substr($curColor, 5, 2)));
-        echo "              <td bgcolor=\"$curColor\" align=\"center\"><font color=\"#FFFFFF\" size=\"2\">" . $fullnames[$userId] . "</font></td>\n";
+        echo "              <td bgcolor=\"$curColor\" align=\"center\" onclick=\"toggleShowUser$userId(this);\"><font color=\"#FFFFFF\" size=\"2\"><b>" . $fullnames[$userId] . "</b></font></td>\n";
     }
 ?>
             </tr>
