@@ -307,8 +307,8 @@ if (isset($_GET['get_paths']) && ($_GET['get_paths'] === "1") && isset($_GET['st
           <table align="center">
             <tr><td colspan="2"><h2>Настройки</h2></td></tr>
             <tr><td colspan="2"><label><input type="checkbox" onchange="toggleShowCurPos(this);" checked />Отображать текущие позиции</label></td></tr>
-            <tr><td colspan="2"><label><input type="checkbox" onchange="toggleShowPathPoints(this);" checked />Отображать точки маршрутов</label></td></tr>
-            <tr><td colspan="2"><label><input type="checkbox" onchange="toggleShowInvalidPathPoints(this);" />Отображать невалидные точки маршрутов</label></td></tr>
+            <tr><td colspan="2"><label><input type="checkbox" onchange="toggleShowPathPoints(this);" checked />Отображать точки маршрутов <img src="path_point.png" alt="Точка маршрута" /></label></td></tr>
+            <tr><td colspan="2"><label><input type="checkbox" onchange="toggleShowInvalidPathPoints(this);" />Отображать невалидные точки маршрутов <img src="invalid_path_point.png" alt="Невалидная точка маршрута" /></label></td></tr>
 
             <tr><td colspan="2"><h2>Состояние</h2></td></tr>
             <tr><td id="applyStatus" colspan="2" align="center"></td></tr>
