@@ -13,7 +13,7 @@ function makePathsFromQueryResult($result) {
         $userId = $row['user_id'];
         $lat = $row['coord1'] / 1E6;
         $lon = $row['coord2'] / 1E6;
-        $ts  = $row['timestamp'];
+        $ts  = date('d.m.Y H:i:s', $row['timestamp'] / 1000);
         $vld = $row['valid'];
         if (array_key_exists($userId, $paths)) {
             $paths[$userId] .= ",$lat,$lon,$ts,$vld";
@@ -91,6 +91,8 @@ if (isset($_GET['get_paths']) && ($_GET['get_paths'] === "1") && isset($_GET['st
       var showCurPos = true;
       var showPathPoints = true;
       var showInvalidPathPoints = false;
+
+      var pointInfoWindow = new google.maps.InfoWindow({content: 'empty'});
 
       var imgPathPoint = new google.maps.MarkerImage('path_point.png', new google.maps.Size(9, 9), new google.maps.Point(0, 0), new google.maps.Point(5, 5));
       var imgInvalidPathPoint = new google.maps.MarkerImage('invalid_path_point.png', new google.maps.Size(7, 7), new google.maps.Point(0, 0), new google.maps.Point(4, 4));
@@ -274,8 +276,13 @@ if (isset($_GET['get_paths']) && ($_GET['get_paths'] === "1") && isset($_GET['st
         echo "                        if (showPathPoints) {\n";
         echo "                            var ppMarker = new google.maps.Marker({\n";
         echo "                                map: map,\n";
+        echo "                                title: '" . $fullnames[$userId] . "\\n' + pathCoords$userId" . "[i * 4 + 2],\n";
         echo "                                position: path$userId" . "[path$userId.length - 1],\n";
         echo "                                icon: (validPoint ? imgPathPoint : imgInvalidPathPoint)\n";
+        echo "                            });\n";
+        echo "                            google.maps.event.addListener(ppMarker, 'click', function(event) {\n";
+        echo "                                pointInfoWindow.setContent(this.getTitle().replace('\\n', '<br />'));\n";
+        echo "                                pointInfoWindow.open(map, this);\n";
         echo "                            });\n";
         echo "                            pathPoints$userId.push(ppMarker);\n";
         echo "                        }\n";
