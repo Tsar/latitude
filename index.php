@@ -13,10 +13,12 @@ function makePathsFromQueryResult($result) {
         $userId = $row['user_id'];
         $lat = $row['coord1'] / 1E6;
         $lon = $row['coord2'] / 1E6;
+        $ts  = $row['timestamp'];
+        $vld = $row['valid'];
         if (array_key_exists($userId, $paths)) {
-            $paths[$userId] .= ",$lat,$lon";
+            $paths[$userId] .= ",$lat,$lon,$ts,$vld";
         } else {
-            $paths[$userId] = "$lat,$lon";
+            $paths[$userId] = "$lat,$lon,$ts,$vld";
         }
     }
     return $paths;
@@ -27,7 +29,7 @@ if (isset($_GET['get_paths']) && ($_GET['get_paths'] === "1") && isset($_GET['st
     $startDate = DateTime::createFromFormat('Y-m-d|', $_GET['start_date'])->getTimestamp();
     $endDate   = DateTime::createFromFormat('Y-m-d|', $_GET['end_date'])->getTimestamp() + 86400;
 
-    $result = $m->query('SELECT user_id, coord1, coord2 FROM pos_history WHERE valid = 1 AND timestamp >= ' . ($startDate * 1000) . ' AND timestamp < ' . ($endDate * 1000) . ' ORDER BY id');
+    $result = $m->query('SELECT user_id, coord1, coord2, timestamp, valid FROM pos_history WHERE timestamp >= ' . ($startDate * 1000) . ' AND timestamp < ' . ($endDate * 1000) . ' ORDER BY id');
     $paths = makePathsFromQueryResult($result);
 
     $userIds = explode('_', $_GET['user_ids_string']);
@@ -88,6 +90,7 @@ if (isset($_GET['get_paths']) && ($_GET['get_paths'] === "1") && isset($_GET['st
 
       var showCurPos = true;
       var showPathPoints = true;
+      var showInvalidPathPoints = false;
 
       var imgPathPoint = new google.maps.MarkerImage('path_point.png', new google.maps.Size(9, 9), new google.maps.Point(0, 0), new google.maps.Point(5, 5));
       var imgInvalidPathPoint = new google.maps.MarkerImage('invalid_path_point.png', new google.maps.Size(7, 7), new google.maps.Point(0, 0), new google.maps.Point(4, 4));
@@ -241,6 +244,11 @@ if (isset($_GET['get_paths']) && ($_GET['get_paths'] === "1") && isset($_GET['st
           refreshPaths();
       }
 
+      function toggleShowInvalidPathPoints(cb) {
+          showInvalidPathPoints = cb.checked;
+          refreshPaths();
+      }
+
       function handlePaths() {
         if (XMLHttp.readyState == 4) {
             var paths = XMLHttp.responseText.split("#");
@@ -258,17 +266,21 @@ if (isset($_GET['get_paths']) && ($_GET['get_paths'] === "1") && isset($_GET['st
         echo "                var pathCoords$userId = paths[$ii].split(\",\");\n";
         echo "                path$userId = [];\n";
 
-        echo "                for (var i = 0, i_end = pathCoords$userId.length / 2; i < i_end; ++i) {\n";
-        echo "                    path$userId.push(new google.maps.LatLng(parseFloat(pathCoords$userId" . "[i * 2]), parseFloat(pathCoords$userId" . "[i * 2 + 1])));\n";
+        echo "                for (var i = 0, i_end = pathCoords$userId.length / 4; i < i_end; ++i) {\n";
+        echo "                    var validPoint = (parseInt(pathCoords$userId" . "[i * 4 + 3]) == 1);\n";
+        echo "                    if (validPoint || showInvalidPathPoints) {\n";
+        echo "                        path$userId.push(new google.maps.LatLng(parseFloat(pathCoords$userId" . "[i * 4]), parseFloat(pathCoords$userId" . "[i * 4 + 1])));\n";
 
-        echo "                    if (showPathPoints) {\n";
-        echo "                        pathPoints$userId.push(new google.maps.Marker({\n";
-        echo "                            map: map,\n";
-        echo "                            position: path$userId" . "[path$userId.length - 1],\n";
-        echo "                            icon: imgPathPoint\n";
-        echo "                        }));\n";
+        echo "                        if (showPathPoints) {\n";
+        echo "                            var ppMarker = new google.maps.Marker({\n";
+        echo "                                map: map,\n";
+        echo "                                position: path$userId" . "[path$userId.length - 1],\n";
+        echo "                                icon: (validPoint ? imgPathPoint : imgInvalidPathPoint)\n";
+        echo "                            });\n";
+        echo "                            pathPoints$userId.push(ppMarker);\n";
+        echo "                        }\n";
+
         echo "                    }\n";
-
         echo "                }\n";
         echo "                polyline$userId.setPath(path$userId);\n";
         echo "            }\n";
@@ -289,6 +301,7 @@ if (isset($_GET['get_paths']) && ($_GET['get_paths'] === "1") && isset($_GET['st
             <tr><td colspan="2"><h2>Настройки</h2></td></tr>
             <tr><td colspan="2"><label><input type="checkbox" onchange="toggleShowCurPos(this);" checked />Отображать текущие позиции</label></td></tr>
             <tr><td colspan="2"><label><input type="checkbox" onchange="toggleShowPathPoints(this);" checked />Отображать точки маршрутов</label></td></tr>
+            <tr><td colspan="2"><label><input type="checkbox" onchange="toggleShowInvalidPathPoints(this);" />Отображать невалидные точки маршрутов</label></td></tr>
 
             <tr><td colspan="2"><h2>Состояние</h2></td></tr>
             <tr><td id="applyStatus" colspan="2" align="center"></td></tr>
