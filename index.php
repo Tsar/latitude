@@ -121,7 +121,7 @@ if (isset($_GET['get_paths']) && ($_GET['get_paths'] === "1") && isset($_GET['st
           var infoWindowFixed = false;
 <?php
 
-    $colors = array("#FF0000", "#009900", "#0000FF", "#FF00FF", "#000000");
+    $colors = array("#FF0000", "#009900", "#0000FF", "#FF00FF", "#000000", "#00BFFF", "#FFA500", "#8B8682");
     $colorsNum = count($colors);
 
     foreach ($userIds as $userId) {
@@ -302,7 +302,7 @@ if (isset($_GET['get_paths']) && ($_GET['get_paths'] === "1") && isset($_GET['st
   <body onload="initialize()">
     <table width="100%" height="100%">
       <tr>
-        <td width="80%" height="100%"><div id="map_canvas"></div></td>
+        <td width="80%" height="96%"><div id="map_canvas"></div></td>
         <td valign="top">
           <table align="center">
             <tr><td colspan="2"><h2>Настройки</h2></td></tr>
@@ -324,6 +324,22 @@ if (isset($_GET['get_paths']) && ($_GET['get_paths'] === "1") && isset($_GET['st
             <tr>
               <td>До:</td>
               <td><div id="rangeEndDate"></div></td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+      <tr>
+        <td colspan="2">
+          <table width="100%" height="100%" style="table-layout: fixed">
+            <tr>
+<?php
+    sort($userIds);
+    foreach ($userIds as $userId) {
+        $curColor = $colors[($userId - 1) % $colorsNum];
+        #$oppositeColor = '#' . dechex(255 - hexdec(substr($curColor, 1, 2))) . dechex(255 - hexdec(substr($curColor, 3, 2))) . dechex(255 - hexdec(substr($curColor, 5, 2)));
+        echo "              <td bgcolor=\"$curColor\" align=\"center\"><font color=\"#FFFFFF\" size=\"2\">" . $fullnames[$userId] . "</font></td>\n";
+    }
+?>
             </tr>
           </table>
         </td>
