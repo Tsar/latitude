@@ -82,6 +82,13 @@ if (isset($_GET['get_paths']) && ($_GET['get_paths'] === "1") && isset($_GET['st
       var map;
       var XMLHttp = getXMLHttp();
 
+      var todayDate = "<?php echo date('Y-m-d'); ?>";
+      var lastDateRangeStart = todayDate;
+      var lastDateRangeEnd = todayDate;
+
+      var showCurPos = true;
+      var showPathPoints = true;
+
       var imgPathPoint = new google.maps.MarkerImage('path_point.png', new google.maps.Size(9, 9), new google.maps.Point(0, 0), new google.maps.Point(5, 5));
       var imgInvalidPathPoint = new google.maps.MarkerImage('invalid_path_point.png', new google.maps.Size(7, 7), new google.maps.Point(0, 0), new google.maps.Point(4, 4));
 
@@ -90,9 +97,9 @@ if (isset($_GET['get_paths']) && ($_GET['get_paths'] === "1") && isset($_GET['st
         echo "      var path$userId = [];\n";
         echo "      var pathPoints$userId = [];\n";
         echo "      var polyline$userId;\n";
+        echo "      var marker$userId;\n";
     }
 ?>
-
       function initialize() {
           var mapOptions = {
               center: new google.maps.LatLng(59.940568, 30.121078),
@@ -131,7 +138,7 @@ if (isset($_GET['get_paths']) && ($_GET['get_paths'] === "1") && isset($_GET['st
             echo "            new google.maps.Size(50, 50)\n";
             echo "        );\n";
         }
-        echo "        var marker$userId = new google.maps.Marker({\n";
+        echo "        marker$userId = new google.maps.Marker({\n";
         echo "            map: map,\n";
         echo "            title: '" . $fullnames[$userId] . "',\n";
         echo "            position: " . $currentPositions[$userId] . ",\n";
@@ -193,7 +200,7 @@ if (isset($_GET['get_paths']) && ($_GET['get_paths'] === "1") && isset($_GET['st
           };
           rangeEndDate.clicked = rangeStartDate.clicked;
 
-          applyDate("<?php echo date('Y-m-d'); ?>");
+          applyDate(todayDate);
       }
 
       function getCalendarDate(calendar) {
@@ -208,10 +215,30 @@ if (isset($_GET['get_paths']) && ($_GET['get_paths'] === "1") && isset($_GET['st
       }
 
       function applyDateRange(dtRangeStart, dtRangeEnd) {
+          lastDateRangeStart = dtRangeStart;
+          lastDateRangeEnd = dtRangeEnd;
           document.getElementById('applyStatus').innerHTML = '<i>Обновление...</i>';
           XMLHttp.open("GET", "?get_paths=1&user_ids_string=<?php echo $userIdsString; ?>&start_date=" + dtRangeStart + "&end_date=" + dtRangeEnd);
           XMLHttp.onreadystatechange = handlePaths;
           XMLHttp.send(null);
+      }
+
+      function refreshPaths() {
+          applyDateRange(lastDateRangeStart, lastDateRangeEnd);
+      }
+
+      function toggleShowCurPos(cb) {
+          showCurPos = cb.checked;
+<?php
+    foreach ($userIds as $userId) {
+        echo "          marker$userId.setMap(showCurPos ? map : null);\n";
+    }
+?>
+      }
+
+      function toggleShowPathPoints(cb) {
+          showPathPoints = cb.checked;
+          refreshPaths();
       }
 
       function handlePaths() {
@@ -220,25 +247,27 @@ if (isset($_GET['get_paths']) && ($_GET['get_paths'] === "1") && isset($_GET['st
 <?php
     $ii = 0;
     foreach ($userIds as $userId) {
+        echo "            for (var i = 0, i_end = pathPoints$userId.length; i < i_end; ++i) {\n";
+        echo "                pathPoints$userId" . "[i].setMap(null);\n";
+        echo "            }\n";
+        echo "            pathPoints$userId = [];\n";
+
         echo "            if (paths[$ii] == \"\") {\n";
         echo "                polyline$userId.setPath([]);\n";
         echo "            } else {\n";
         echo "                var pathCoords$userId = paths[$ii].split(\",\");\n";
         echo "                path$userId = [];\n";
 
-        echo "                for (var i = 0, i_end = pathPoints$userId.length; i < i_end; ++i) {\n";
-        echo "                    pathPoints$userId" . "[i].setMap(null);\n";
-        echo "                }\n";
-        echo "                pathPoints$userId = [];\n";
-
         echo "                for (var i = 0, i_end = pathCoords$userId.length / 2; i < i_end; ++i) {\n";
         echo "                    path$userId.push(new google.maps.LatLng(parseFloat(pathCoords$userId" . "[i * 2]), parseFloat(pathCoords$userId" . "[i * 2 + 1])));\n";
 
-        echo "                    pathPoints$userId.push(new google.maps.Marker({\n";
-        echo "                        map: map,\n";
-        echo "                        position: path$userId" . "[path$userId.length - 1],\n";
-        echo "                        icon: imgPathPoint\n";
-        echo "                    }));\n";
+        echo "                    if (showPathPoints) {\n";
+        echo "                        pathPoints$userId.push(new google.maps.Marker({\n";
+        echo "                            map: map,\n";
+        echo "                            position: path$userId" . "[path$userId.length - 1],\n";
+        echo "                            icon: imgPathPoint\n";
+        echo "                        }));\n";
+        echo "                    }\n";
 
         echo "                }\n";
         echo "                polyline$userId.setPath(path$userId);\n";
@@ -257,8 +286,16 @@ if (isset($_GET['get_paths']) && ($_GET['get_paths'] === "1") && isset($_GET['st
         <td width="80%" height="100%"><div id="map_canvas"></div></td>
         <td valign="top">
           <table align="center">
+            <tr><td colspan="2"><h2>Настройки</h2></td></tr>
+            <tr><td colspan="2"><label><input type="checkbox" onchange="toggleShowCurPos(this);" checked />Отображать текущие позиции</label></td></tr>
+            <tr><td colspan="2"><label><input type="checkbox" onchange="toggleShowPathPoints(this);" checked />Отображать точки маршрутов</label></td></tr>
+
+            <tr><td colspan="2"><h2>Состояние</h2></td></tr>
+            <tr><td id="applyStatus" colspan="2" align="center"></td></tr>
+
             <tr><td colspan="2"><h2>Отображать день</h2></td></tr>
             <tr><td colspan="2"><div id="singleDate"></div></td></tr>
+
             <tr><td colspan="2"><h2>Отображать диапазон</h2></td></tr>
             <tr>
               <td>С:</td>
@@ -267,10 +304,6 @@ if (isset($_GET['get_paths']) && ($_GET['get_paths'] === "1") && isset($_GET['st
             <tr>
               <td>До:</td>
               <td><div id="rangeEndDate"></div></td>
-            </tr>
-            <tr><td colspan="2"><h2>Состояние</h2></td></tr>
-            <tr>
-              <td id="applyStatus" colspan="2" align="center"></td>
             </tr>
           </table>
         </td>
