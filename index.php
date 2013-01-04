@@ -43,6 +43,22 @@ if (isset($_GET['get_paths']) && ($_GET['get_paths'] === "1") && isset($_GET['st
     }
     echo implode('#', $resPaths);
 
+} else if (isset($_GET['avatar_id']) && is_numeric($_GET['avatar_id'])) {
+
+    $result = $m->query('SELECT profile_image_data FROM users WHERE user_id = ' . htmlentities($_GET['avatar_id']));
+    if ($row = $result->fetch_assoc()) {
+        $imageData = $row['profile_image_data'];
+        if (!is_null($imageData)) {
+            $fInfo = new finfo(FILEINFO_MIME_TYPE);
+            header('Content-type: ' . $fInfo->buffer($imageData));
+            echo $imageData;
+        } else {
+            echo "User has no avatar";
+        }
+    } else {
+        echo "Invalid user id";
+    }
+
 } else {
 
 ?>
@@ -139,7 +155,7 @@ if (isset($_GET['get_paths']) && ($_GET['get_paths'] === "1") && isset($_GET['st
 
         if (!is_null($profileImages[$userId])) {
             echo "        var markerImage$userId = new google.maps.MarkerImage(\n";
-            echo "            '" . $profileImages[$userId] . "',\n";
+            echo "            '?avatar_id=$userId',\n";
             echo "            new google.maps.Size(50, 50),\n";
             echo "            new google.maps.Point(0, 0),\n";
             echo "            new google.maps.Point(25, 67),\n";
@@ -160,7 +176,7 @@ if (isset($_GET['get_paths']) && ($_GET['get_paths'] === "1") && isset($_GET['st
 
         if (!is_null($profileImages[$userId])) {
             $infoWindowContent = '><tr><td><b><a href="' . $googleplus[$userId] . '" target=_blank>' . $fullnames[$userId] . '</a></b></td>' .
-                                      '<td rowspan="2"><a href="' . $googleplus[$userId] . '" target=_blank><img src="' . $profileImages[$userId] . '" alt="' . $fullnames[$userId] . '" /></a></td></tr>' .
+                                      '<td rowspan="2"><a href="' . $googleplus[$userId] . '" target=_blank><img src="?avatar_id=' . $userId . '" alt="' . $fullnames[$userId] . '" /></a></td></tr>' .
                                   '<tr><td><i>Последнее обновление:</i><br/>' . date('d.m.Y H:i:s', $lastUpdateTime[$userId] / 1000) . '</td></tr></table>';
         } else {
             $infoWindowContent = '><tr><td><b><a href="' . $googleplus[$userId] . '" target=_blank>' . $fullnames[$userId] . '</a></b></td></tr>' .
