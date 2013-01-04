@@ -10,6 +10,7 @@ import getpass, re, json, time, sys
 #  * curl http://python-distribute.org/distribute_setup.py | python3
 #  * easy_install-3.2 pymysql3
 import pymysql
+from pymysql.constants.COMMAND import COM_QUERY
 
 DB_HOST   = 'localhost'
 DB_USER   = 'latitude_palevo'
@@ -69,6 +70,17 @@ class Logger():
         print(info, end = end)
         self.logFile.write(info + end)
         self.logFile.flush()
+
+def lowLevelDBQuery(conn, sql):
+    conn._send_command(COM_QUERY, sql)
+
+def escapeBinary(value):
+    B_ESCAPE_REGEX = re.compile(pymysql.converters.ESCAPE_REGEX.pattern.encode('utf-8'))
+    B_ESCAPE_MAP = {}
+    for (x, y) in pymysql.converters.ESCAPE_MAP.items():
+        B_ESCAPE_MAP[x.encode('utf-8')] = y.encode('utf-8')
+    ch = "'".encode('utf-8')
+    return (ch + B_ESCAPE_REGEX.sub(lambda match: B_ESCAPE_MAP.get(match.group(0)), value) + ch)
 
 if __name__ == "__main__":
     conn = pymysql.connect(host = DB_HOST, user = DB_USER, passwd = DB_PASSWD, db = DB_NAME, charset = 'utf8')
@@ -196,7 +208,9 @@ if __name__ == "__main__":
                             if info[13] != None:
                                 prImage = "https://latitude.google.com/latitude/b/0/profileImage?fid=%d&url=%s&sz=32" % (int(info[1][1]), info[13])
                                 if prImage != profileImages[userId]:
-                                    cur.execute('UPDATE users SET profile_image = %s WHERE user_id = %d' % (conn.escape(prImage), userId))
+                                    profileImageData = opener.open(prImage).read()
+                                    # Low level query instead of: cur.execute('UPDATE users SET profile_image = %s, profile_image_data = %s WHERE user_id = %d', (prImage, profileImageData, userId))
+                                    lowLevelDBQuery(conn, ('UPDATE users SET profile_image = %s, profile_image_data = ' % conn.escape(prImage)).encode('utf-8') + escapeBinary(profileImageData) + (' WHERE user_id = %d' % userId).encode('utf-8'))
                                     profileImages[userId] = prImage
 
                         logger.addToLogWithNoTimestamp("DONE")

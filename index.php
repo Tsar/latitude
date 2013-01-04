@@ -124,7 +124,7 @@ if (isset($_GET['get_paths']) && ($_GET['get_paths'] === "1") && isset($_GET['st
           var infoWindowFixed = false;
 <?php
 
-    $colors = array("#FF0000", "#009900", "#0000FF", "#FF00FF", "#000000", "#00BFFF", "#FFA500", "#8B8682", "#800000");
+    $colors = array("#FF0000", "#009900", "#0000FF", "#FF00FF", "#000000", "#00BFFF", "#FFA500", "#8B8682", "#800000", "#00CC66");
     $colorsNum = count($colors);
 
     foreach ($userIds as $userId) {

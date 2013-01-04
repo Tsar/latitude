@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 3.5.1
+-- version 3.5.4
 -- http://www.phpmyadmin.net
 --
 -- Host: localhost
--- Generation Time: Dec 24, 2012 at 08:17 PM
--- Server version: 5.1.61-log
--- PHP Version: 5.3.10-pl0-gentoo
+-- Generation Time: Jan 04, 2013 at 06:22 PM
+-- Server version: 5.5.28-0ubuntu0.12.04.3
+-- PHP Version: 5.3.10-1ubuntu3.4
 
 SET SQL_MODE="NO_AUTO_VALUE_ON_ZERO";
 SET time_zone = "+00:00";
@@ -75,6 +75,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `lastname` text,
   `googleplus` text,
   `profile_image` text,
+  `profile_image_data` longblob,
   PRIMARY KEY (`user_id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
