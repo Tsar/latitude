@@ -177,12 +177,12 @@ if __name__ == "__main__":
 
             if jsonGetOK:
                 if doc != oldDoc:
-                    try:
-                        logger.addToLog("Saving raw json dump to DB:", end = " ")
-                        cur.execute('INSERT INTO raw_json_dumps (timestamp, data) VALUES (NOW(), %s)' % conn.escape(docEnc))
-                        logger.addToLogWithNoTimestamp("DONE")
-                    except:
-                        logger.addToLogWithNoTimestamp("FAIL: " + str(sys.exc_info()[1]))
+#                    try:
+#                        logger.addToLog("Saving raw json dump to DB:", end = " ")
+#                        cur.execute('INSERT INTO raw_json_dumps (timestamp, data) VALUES (NOW(), %s)' % conn.escape(docEnc))
+#                        logger.addToLogWithNoTimestamp("DONE")
+#                    except:
+#                        logger.addToLogWithNoTimestamp("FAIL: " + str(sys.exc_info()[1]))
 
                     try:
                         logger.addToLog("Processing json dump and saving processed data to DB:", end = " ")
