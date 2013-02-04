@@ -10,7 +10,7 @@ import pymysql
 
 DB_HOST   = 'localhost'
 DB_USER   = 'latitude_palevo'
-DB_PASSWD = 'uQVyav38Wz9nmysz'
+DB_PASSWD = '********'
 DB_NAME   = 'latitude_palevo'
 
 MAX_SPEED = 1100  # km per hour

@@ -2,7 +2,7 @@
 
 $db_server = 'localhost';
 $db_user   = 'latitude_palevo';
-$db_passwd = 'uQVyav38Wz9nmysz';
+$db_passwd = '********';
 $db_name   = 'latitude_palevo';
 
 $m = new mysqli($db_server, $db_user, $db_passwd, $db_name);

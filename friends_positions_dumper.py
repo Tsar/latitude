@@ -14,7 +14,7 @@ from pymysql.constants.COMMAND import COM_QUERY
 
 DB_HOST   = 'localhost'
 DB_USER   = 'latitude_palevo'
-DB_PASSWD = 'uQVyav38Wz9nmysz'
+DB_PASSWD = '********'
 DB_NAME   = 'latitude_palevo'
 
 SLEEP_INTERVAL = 120
