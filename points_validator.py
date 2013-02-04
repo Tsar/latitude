@@ -13,6 +13,8 @@ DB_USER   = 'latitude_palevo'
 DB_PASSWD = 'uQVyav38Wz9nmysz'
 DB_NAME   = 'latitude_palevo'
 
+MAX_SPEED = 1100  # km per hour
+
 # Result in km
 def distance(origin, destination):
     lat1, lon1 = origin
@@ -36,6 +38,8 @@ if __name__ == "__main__":
     # Last Valid Points
     lvp = {}
 
+    invalidCount = 0
+
     cur.execute('SELECT id, user_id, coord1, coord2, timestamp FROM pos_history WHERE valid = 1 ORDER BY id')
     for row in cur:
         id, u, coord1, coord2, timestamp = row
@@ -46,9 +50,12 @@ if __name__ == "__main__":
         if not u in lvp:
             lvp[u] = (coord1, coord2, timestamp)
         else:
-            if distance((lvp[u][0], lvp[u][1]), (coord1, coord2)) / (timestamp - lvp[u][2]) > 2000:
+            if distance((lvp[u][0], lvp[u][1]), (coord1, coord2)) / (timestamp - lvp[u][2]) > MAX_SPEED:
                 # Current point invalid
                 cur2.execute('UPDATE pos_history SET valid = 0 WHERE id = %d' % id)
+                invalidCount += 1
                 print("point is considered to be invalid: (%f, %f), id = %d" % (coord1, coord2, id))
             else:
                 lvp[u] = (coord1, coord2, timestamp)
+
+    print("%d points are considered to be invalid" % invalidCount)
