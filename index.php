@@ -374,6 +374,7 @@ if (isset($_GET['get_paths']) && ($_GET['get_paths'] === "1") && isset($_GET['st
         </td>
       </tr>
     </table>
+    <p align="center"><font size=2><i>Исходники:</i> <a href="https://github.com/Tsar/latitude" target=_blank>https://github.com/Tsar/latitude</a></font></p>
   </body>
 </html>
 <?php
