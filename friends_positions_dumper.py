@@ -109,115 +109,118 @@ if __name__ == "__main__":
     logger = Logger("friends_positions_dumper.log")
 
     while True:
-        logger.addToLog("Getting login page:", end = " ")
-        opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()), urllib.request.HTTPRedirectHandler())
-        response = opener.open("https://accounts.google.com/ServiceLogin?service=friendview&continue=http://www.google.com/latitude&followup=http://www.google.com/latitude")
-        doc = response.read().decode('utf-8')
-        parser = FormParser()
-        parser.feed(doc)
-        parser.close()
-        if not parser.form_parsed or parser.url is None or "Email" not in parser.params or "Passwd" not in parser.params:
-            logger.addToLogWithNoTimestamp("FATAL FAIL [unexisting or invalid form]")
-            raise RuntimeError("Something wrong")
-        logger.addToLogWithNoTimestamp("DONE")
+        try:
+            logger.addToLog("Getting login page:", end = " ")
+            opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()), urllib.request.HTTPRedirectHandler())
+            response = opener.open("https://accounts.google.com/ServiceLogin?service=friendview&continue=http://www.google.com/latitude&followup=http://www.google.com/latitude")
+            doc = response.read().decode('utf-8')
+            parser = FormParser()
+            parser.feed(doc)
+            parser.close()
+            if not parser.form_parsed or parser.url is None or "Email" not in parser.params or "Passwd" not in parser.params:
+                logger.addToLogWithNoTimestamp("FATAL FAIL [unexisting or invalid form]")
+                raise RuntimeError("Something wrong")
+            logger.addToLogWithNoTimestamp("DONE")
 
-        if email == "" and password == "":
-            email = input("Email: ")
-            password = getpass.getpass()
+            if email == "" and password == "":
+                email = input("Email: ")
+                password = getpass.getpass()
 
-        logger.addToLog("Logging in:", end = " ")
-        parser.params["Email"] = email
-        parser.params["Passwd"] = password
-        if parser.method.upper() == "POST":
-            response = opener.open(parser.url, urllib.parse.urlencode(parser.params).encode('utf-8'))
-        else:
-            logger.addToLogWithNoTimestamp("FATAL FAIL [unknown method]")
-            raise NotImplementedError("Method '%s'" % parser.method)
-        doc = response.read().decode('utf-8')
-        if response.geturl() == "https://accounts.google.com/ServiceLoginAuth":
-            logger.addToLogWithNoTimestamp("FATAL FAIL [incorrect email or password]")
-            raise RuntimeError("Incorrect email or password")
-        logger.addToLogWithNoTimestamp("DONE")
-
-        logger.addToLog("Getting latitude page and parsing XsrfToken:", end = " ")
-        response = opener.open("https://latitude.google.com/latitude/b/0")
-        doc = response.read().decode('utf-8')
-        XsrfTokenMatch = re.search(r'window\.LatitudeServerConstants\[\s*\'XsrfToken\'\s*\]\s*=\s*\'([^\']+)\'\s*;', doc)
-        if XsrfTokenMatch == None:
-            logger.addToLogWithNoTimestamp("FATAL FAIL [can\'t get XsrfToken]")
-            raise RuntimeError("Can\'t get XsrfToken!")
-        XsrfToken = XsrfTokenMatch.group(1)
-        logger.addToLogWithNoTimestamp("DONE")
-
-        jsonGetOK = True
-        oldDoc = ""
-
-        while jsonGetOK:
-            logger.addToLog("Getting friends info and coordinates json dump:", end = " ")
-            response = opener.open(urllib.request.Request("https://latitude.google.com/latitude/b/0/apps/pvjson?t=4", "[null,null,null,null,null,true,null,[null,null,null,null,null,null,null,2]]".encode('utf-8'), {"X-ManualHeader": XsrfToken}))
-            docEnc = response.read()
-            oldDoc = doc
-            doc = docEnc.decode('utf-8')
-            if doc == "[3,[]]":
-                jsonGetOK = False
-                logger.addToLogWithNoTimestamp("Got [3,[]], need relogin")
+            logger.addToLog("Logging in:", end = " ")
+            parser.params["Email"] = email
+            parser.params["Passwd"] = password
+            if parser.method.upper() == "POST":
+                response = opener.open(parser.url, urllib.parse.urlencode(parser.params).encode('utf-8'))
             else:
-                try:
-                    friendsInfo = json.loads(doc)
-                    logger.addToLogWithNoTimestamp("DONE")
-                except ValueError:
+                logger.addToLogWithNoTimestamp("FATAL FAIL [unknown method]")
+                raise NotImplementedError("Method '%s'" % parser.method)
+            doc = response.read().decode('utf-8')
+            if response.geturl() == "https://accounts.google.com/ServiceLoginAuth":
+                logger.addToLogWithNoTimestamp("FATAL FAIL [incorrect email or password]")
+                raise RuntimeError("Incorrect email or password")
+            logger.addToLogWithNoTimestamp("DONE")
+
+            logger.addToLog("Getting latitude page and parsing XsrfToken:", end = " ")
+            response = opener.open("https://latitude.google.com/latitude/b/0")
+            doc = response.read().decode('utf-8')
+            XsrfTokenMatch = re.search(r'window\.LatitudeServerConstants\[\s*\'XsrfToken\'\s*\]\s*=\s*\'([^\']+)\'\s*;', doc)
+            if XsrfTokenMatch == None:
+                logger.addToLogWithNoTimestamp("FATAL FAIL [can\'t get XsrfToken]")
+                raise RuntimeError("Can\'t get XsrfToken!")
+            XsrfToken = XsrfTokenMatch.group(1)
+            logger.addToLogWithNoTimestamp("DONE")
+
+            jsonGetOK = True
+            oldDoc = ""
+
+            while jsonGetOK:
+                logger.addToLog("Getting friends info and coordinates json dump:", end = " ")
+                response = opener.open(urllib.request.Request("https://latitude.google.com/latitude/b/0/apps/pvjson?t=4", "[null,null,null,null,null,true,null,[null,null,null,null,null,null,null,2]]".encode('utf-8'), {"X-ManualHeader": XsrfToken}))
+                docEnc = response.read()
+                oldDoc = doc
+                doc = docEnc.decode('utf-8')
+                if doc == "[3,[]]":
                     jsonGetOK = False
-                    parser = FormParser()
-                    parser.feed(doc)
-                    parser.close()
-                    if not parser.form_parsed or parser.url is None or "Email" not in parser.params or "Passwd" not in parser.params:
-                        logger.addToLogWithNoTimestamp("FAIL [unrecognized answer]")
-                    else:
-                        logger.addToLogWithNoTimestamp("FAIL [relogin page is the answer]")
-
-            if jsonGetOK:
-                if doc != oldDoc:
-#                    try:
-#                        logger.addToLog("Saving raw json dump to DB:", end = " ")
-#                        cur.execute('INSERT INTO raw_json_dumps (timestamp, data) VALUES (NOW(), %s)' % conn.escape(docEnc))
-#                        logger.addToLogWithNoTimestamp("DONE")
-#                    except:
-#                        logger.addToLogWithNoTimestamp("FAIL: " + str(sys.exc_info()[1]))
-
-                    try:
-                        logger.addToLog("Processing json dump and saving processed data to DB:", end = " ")
-
-                        for info in friendsInfo[1][1]:
-                            if info[5] == None or info[6] == None:
-                                continue
-
-                            if not info[2] in emailToUserId:
-                                maxUserId += 1
-                                cur.execute('INSERT INTO email_to_user_id (email, user_id) VALUES (%s, %d)' % (conn.escape(info[2]), maxUserId))
-                                emailToUserId[info[2]] = maxUserId
-                                cur.execute('INSERT INTO users (user_id, last_update_time, email, fullname, firstname, lastname, googleplus) VALUES (%d, 0, %s, %s, %s, %s, %s)' % (maxUserId, conn.escape(info[2]), conn.escape(info[3]), conn.escape(info[19]), conn.escape(info[20]), conn.escape(info[30])))
-                                lastUpdateTime[maxUserId] = 0
-                                profileImages[maxUserId] = None
-
-                            userId = emailToUserId[info[2]]
-                            if int(info[7]) != lastUpdateTime[userId]:
-                                cur.execute('UPDATE users SET last_update_time = %d WHERE user_id = %d' % (int(info[7]), userId))
-                                lastUpdateTime[userId] = int(info[7])
-                                cur.execute('INSERT INTO pos_history (user_id, coord1, coord2, timestamp) VALUES (%d, %d, %d, %d)' % (userId, info[5], info[6], int(info[7])))
-
-                            if info[13] != None:
-                                prImage = "https://latitude.google.com/latitude/b/0/profileImage?fid=%d&url=%s&sz=32" % (int(info[1][1]), info[13])
-                                if prImage != profileImages[userId]:
-                                    profileImageData = opener.open(prImage).read()
-                                    # Low level query instead of: cur.execute('UPDATE users SET profile_image = %s, profile_image_data = %s WHERE user_id = %d', (prImage, profileImageData, userId))
-                                    lowLevelDBQuery(conn, ('UPDATE users SET profile_image = %s, profile_image_data = ' % conn.escape(prImage)).encode('utf-8') + escapeBinary(profileImageData) + (' WHERE user_id = %d' % userId).encode('utf-8'))
-                                    profileImages[userId] = prImage
-
-                        logger.addToLogWithNoTimestamp("DONE")
-                    except:
-                        logger.addToLogWithNoTimestamp("FAIL: " + str(sys.exc_info()[1]))
-
+                    logger.addToLogWithNoTimestamp("Got [3,[]], need relogin")
                 else:
-                    logger.addToLog("No difference from last json dump")
+                    try:
+                        friendsInfo = json.loads(doc)
+                        logger.addToLogWithNoTimestamp("DONE")
+                    except ValueError:
+                        jsonGetOK = False
+                        parser = FormParser()
+                        parser.feed(doc)
+                        parser.close()
+                        if not parser.form_parsed or parser.url is None or "Email" not in parser.params or "Passwd" not in parser.params:
+                            logger.addToLogWithNoTimestamp("FAIL [unrecognized answer]")
+                        else:
+                            logger.addToLogWithNoTimestamp("FAIL [relogin page is the answer]")
 
-                time.sleep(SLEEP_INTERVAL)
+                if jsonGetOK:
+                    if doc != oldDoc:
+#                        try:
+#                            logger.addToLog("Saving raw json dump to DB:", end = " ")
+#                            cur.execute('INSERT INTO raw_json_dumps (timestamp, data) VALUES (NOW(), %s)' % conn.escape(docEnc))
+#                            logger.addToLogWithNoTimestamp("DONE")
+#                        except:
+#                            logger.addToLogWithNoTimestamp("FAIL: " + str(sys.exc_info()[1]))
+
+                        try:
+                            logger.addToLog("Processing json dump and saving processed data to DB:", end = " ")
+
+                            for info in friendsInfo[1][1]:
+                                if info[5] == None or info[6] == None:
+                                    continue
+
+                                if not info[2] in emailToUserId:
+                                    maxUserId += 1
+                                    cur.execute('INSERT INTO email_to_user_id (email, user_id) VALUES (%s, %d)' % (conn.escape(info[2]), maxUserId))
+                                    emailToUserId[info[2]] = maxUserId
+                                    cur.execute('INSERT INTO users (user_id, last_update_time, email, fullname, firstname, lastname, googleplus) VALUES (%d, 0, %s, %s, %s, %s, %s)' % (maxUserId, conn.escape(info[2]), conn.escape(info[3]), conn.escape(info[19]), conn.escape(info[20]), conn.escape(info[30])))
+                                    lastUpdateTime[maxUserId] = 0
+                                    profileImages[maxUserId] = None
+
+                                userId = emailToUserId[info[2]]
+                                if int(info[7]) != lastUpdateTime[userId]:
+                                    cur.execute('UPDATE users SET last_update_time = %d WHERE user_id = %d' % (int(info[7]), userId))
+                                    lastUpdateTime[userId] = int(info[7])
+                                    cur.execute('INSERT INTO pos_history (user_id, coord1, coord2, timestamp) VALUES (%d, %d, %d, %d)' % (userId, info[5], info[6], int(info[7])))
+
+                                if info[13] != None:
+                                    prImage = "https://latitude.google.com/latitude/b/0/profileImage?fid=%d&url=%s&sz=32" % (int(info[1][1]), info[13])
+                                    if prImage != profileImages[userId]:
+                                        profileImageData = opener.open(prImage).read()
+                                        # Low level query instead of: cur.execute('UPDATE users SET profile_image = %s, profile_image_data = %s WHERE user_id = %d', (prImage, profileImageData, userId))
+                                        lowLevelDBQuery(conn, ('UPDATE users SET profile_image = %s, profile_image_data = ' % conn.escape(prImage)).encode('utf-8') + escapeBinary(profileImageData) + (' WHERE user_id = %d' % userId).encode('utf-8'))
+                                        profileImages[userId] = prImage
+
+                            logger.addToLogWithNoTimestamp("DONE")
+                        except:
+                            logger.addToLogWithNoTimestamp("FAIL: " + str(sys.exc_info()[1]))
+
+                    else:
+                        logger.addToLog("No difference from last json dump")
+
+                    time.sleep(SLEEP_INTERVAL)
+        except:
+            logger.addToLogWithNoTimestamp("MAIN CYCLE FAIL: " + str(sys.exc_info()[1]))
