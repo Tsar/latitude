@@ -330,8 +330,13 @@ if (isset($_GET['get_paths']) && ($_GET['get_paths'] === "1") && isset($_GET['st
   </head>
   <body onload="initialize()">
     <table width="100%" height="100%">
+      <tr width="100%" height="6%">
+        <td colspan="2" bgcolor="#CD5C5C" align="center">
+          <font face="symbol" color="#00F5FF" size="4"><b>ВНИМАНИЕ! Этот сервис использовал данные от Google Локатора, который прекратил работу 9 августа 2013 года (<a href="https://support.google.com/gmm/answer/3001634?hl=ru" target=_blank><font color="#00F5AA">подтверждение</font></a>).<br />Поэтому нет никаких данных новее, чем эта дата. Новый сервис уже в разработке!</b></font>
+        </td>
+      </tr>
       <tr>
-        <td width="80%" height="96%"><div id="map_canvas"></div></td>
+        <td width="80%" height="90%"><div id="map_canvas"></div></td>
         <td valign="top">
           <table align="center">
             <tr><td colspan="2"><h2>Настройки</h2></td></tr>
